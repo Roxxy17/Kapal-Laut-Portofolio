@@ -1,0 +1,31 @@
+# Development files
+scripts/
+*.md
+.env.example
+
+# Database files
+*.db
+*.sqlite
+
+# Cache and logs
+.next/cache/
+*.log
+
+# Development dependencies
+node_modules/
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test files
+**/*.test.*
+**/*.spec.*
+
+# Temporary files
+*.tmp
+*.temp

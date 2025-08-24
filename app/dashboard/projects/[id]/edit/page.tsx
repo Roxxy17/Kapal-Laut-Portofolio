@@ -54,7 +54,6 @@ export default function EditProjectPage({ params }: EditProjectPageProps) {
       }
       
       const data = await response.json()
-      console.log('Project data received:', data.project) // Debug log
       setProject(data.project) // Extract project from response
     } catch (error) {
       console.error('Error fetching project:', error)

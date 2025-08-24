@@ -74,12 +74,9 @@ export function AddProjectForm({ initialData, isEdit = false }: AddProjectFormPr
 
   // Initialize form data with initialData if in edit mode
   useEffect(() => {
-    console.log('useEffect triggered - isEdit:', isEdit, 'initialData:', initialData) // Debug log
     if (isEdit && initialData) {
-      console.log('Loading project data:', initialData) // Debug log
       setProjectId(initialData._id)
       setIsEditMode(true)
-      console.log('Set edit mode - projectId:', initialData._id) // Debug log
       
       // Convert status from database format to form format
       const statusMap: {[key: string]: string} = {
@@ -164,8 +161,6 @@ export function AddProjectForm({ initialData, isEdit = false }: AddProjectFormPr
     setIsLoading(true)
 
     try {
-      console.log('Submit triggered - isEditMode:', isEditMode, 'projectId:', projectId) // Debug log
-      
       const token = localStorage.getItem('token')
       if (!token) {
         toast({
@@ -205,8 +200,6 @@ export function AddProjectForm({ initialData, isEdit = false }: AddProjectFormPr
       const url = isEditMode ? `/api/projects/${projectId}` : '/api/projects'
       const method = isEditMode ? 'PUT' : 'POST'
 
-      console.log('API Request:', { url, method, projectData }) // Debug log
-
       const response = await fetch(url, {
         method,
         headers: {
@@ -216,11 +209,8 @@ export function AddProjectForm({ initialData, isEdit = false }: AddProjectFormPr
         body: JSON.stringify(projectData)
       })
 
-      console.log('API Response status:', response.status) // Debug log
-
       if (response.ok) {
         const data = await response.json()
-        console.log('Project saved:', data)
         setSuccess(true)
         toast({
           title: "Success",
@@ -233,11 +223,9 @@ export function AddProjectForm({ initialData, isEdit = false }: AddProjectFormPr
         }, 1500)
       } else {
         const errorData = await response.json()
-        console.error('API Error Response:', response.status, errorData) // Debug log
         throw new Error(errorData.error || `Failed to ${isEditMode ? 'update' : 'create'} project`)
       }
     } catch (error: any) {
-      console.error('Submit error:', error)
       toast({
         title: "Error",
         description: error.message || `Failed to ${isEditMode ? 'update' : 'create'} project`,

@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken'
 import connectDB from '@/lib/mongodb'
 import Project from '@/models/Project'
 import User from '@/models/User'
+import { logProjectActivity } from '@/lib/activity-logger'
 
 // Helper function to verify JWT token
 async function verifyToken(request: NextRequest) {
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const category = searchParams.get('category')
     const featured = searchParams.get('featured')
-    const status = searchParams.get('status') || 'published'
+    const status = searchParams.get('status') || 'completed'
 
     let query: any = {}
     
@@ -110,6 +111,9 @@ export async function POST(request: NextRequest) {
     })
 
     await project.populate('createdBy', 'name email')
+
+    // Log activity
+    await logProjectActivity(decoded.userId, 'project_created', title, project._id.toString())
 
     return NextResponse.json({
       success: true,

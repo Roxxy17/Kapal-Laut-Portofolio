@@ -88,10 +88,10 @@ export function ProjectsManagement() {
 
   const getAllProjects = () => searchFilteredProjects
   const getIndividualProjects = () => searchFilteredProjects.filter(project => 
-    project.type === 'individual' || (!project.type && !project.isTeamProject)
+    project.type === 'individual'
   )
   const getTeamProjects = () => searchFilteredProjects.filter(project => 
-    project.type === 'team' || (!project.type && project.isTeamProject)
+    project.type === 'team'
   )
 
   // Handlers

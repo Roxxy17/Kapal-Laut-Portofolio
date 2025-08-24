@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken'
 import connectDB from '@/lib/mongodb'
 import Project from '@/models/Project'
 import User from '@/models/User'
+import { logProjectActivity } from '@/lib/activity-logger'
 
 // Helper function to verify JWT token
 async function verifyToken(request: NextRequest) {
@@ -99,6 +100,9 @@ export async function PUT(
       { new: true, runValidators: true }
     ).populate('createdBy', 'name email avatar')
 
+    // Log activity
+    await logProjectActivity(decoded.userId, 'project_updated', updatedProject.title, id)
+
     return NextResponse.json({
       success: true,
       message: 'Project updated successfully',
@@ -155,8 +159,14 @@ export async function DELETE(
       )
     }
 
+    // Store title before deletion for logging
+    const projectTitle = project.title
+
     // Delete project
     await Project.findByIdAndDelete(id)
+
+    // Log activity
+    await logProjectActivity(decoded.userId, 'project_deleted', projectTitle, id)
 
     return NextResponse.json({
       success: true,

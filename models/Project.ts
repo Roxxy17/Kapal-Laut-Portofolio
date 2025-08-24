@@ -4,17 +4,19 @@ export interface IProject extends Document {
   title: string
   description: string
   shortDescription: string
-  category: 'web' | 'mobile' | 'design' | 'other' | 'individual' | 'team'
+  category: 'web-development' | 'mobile-development' | 'ui-ux-design' | 'data-science' | 'devops' | 'other'
   technologies: string[]
   image: string
   gallery: string[]
   liveUrl?: string
   githubUrl?: string
   featured: boolean
-  status: 'draft' | 'published' | 'planning' | 'in progress' | 'completed' | 'on hold'
+  status: 'draft' | 'planning' | 'in-progress' | 'completed' | 'on-hold'
   type: 'individual' | 'team'
   isTeamProject: boolean
   collaborators?: mongoose.Types.ObjectId[]
+  views: number
+  likes: number
   createdBy: mongoose.Types.ObjectId
   createdAt: Date
   updatedAt: Date
@@ -42,7 +44,7 @@ const ProjectSchema: Schema = new Schema({
   category: {
     type: String,
     required: [true, 'Please specify a category'],
-    enum: ['web', 'mobile', 'design', 'other', 'individual', 'team']
+    enum: ['web-development', 'mobile-development', 'ui-ux-design', 'data-science', 'devops', 'other']
   },
   technologies: [{
     type: String,
@@ -70,7 +72,7 @@ const ProjectSchema: Schema = new Schema({
   },
   status: {
     type: String,
-    enum: ['draft', 'published', 'planning', 'in progress', 'completed', 'on hold'],
+    enum: ['draft', 'planning', 'in-progress', 'completed', 'on-hold'],
     default: 'draft'
   },
   type: {
@@ -81,6 +83,14 @@ const ProjectSchema: Schema = new Schema({
   isTeamProject: {
     type: Boolean,
     default: false
+  },
+  views: {
+    type: Number,
+    default: 0
+  },
+  likes: {
+    type: Number,
+    default: 0
   },
   collaborators: [{
     type: mongoose.Schema.Types.ObjectId,

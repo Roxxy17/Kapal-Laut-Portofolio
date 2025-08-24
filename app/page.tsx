@@ -1,5 +1,6 @@
 import { Navigation } from "@/components/navigation"
 import { HeroSection } from "@/components/hero-section"
+import { RecentProjectsSection } from "@/components/recent-projects-section"
 import { ServicesSection } from "@/components/services-section"
 import { TeamSection } from "@/components/team-section"
 import TimelineSection from "@/components/timeline-section"
@@ -13,6 +14,7 @@ export default function HomePage() {
     <main className="min-h-screen">
       <Navigation />
       <HeroSection />
+      <RecentProjectsSection />
       <ServicesSection />
       <TeamSection />
       <TimelineSection />

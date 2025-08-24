@@ -51,21 +51,26 @@ export function TestimonialsSection() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % testimonials.length)
+      setCurrentIndex((prev) => {
+        const totalSlides = Math.ceil(testimonials.length / 2)
+        const currentSlide = Math.floor(prev / 2)
+        const nextSlide = (currentSlide + 1) % totalSlides
+        return nextSlide * 2
+      })
     }, 6000) // Slower transition
     return () => clearInterval(interval)
   }, [])
 
   return (
-    <section className="py-24 px-4 relative overflow-hidden">
-      {/* Background elements matching other sections */}
-      <div className="absolute top-20 right-20 w-40 h-40 bg-gradient-to-r from-accent/5 to-primary/5 rounded-full animate-sophisticated-float blur-2xl" />
-      <div className="absolute bottom-32 left-32 w-32 h-32 bg-gradient-to-l from-primary/8 to-accent/8 animate-liquid-morph blur-xl" />
-      <div className="absolute top-1/2 left-20 w-24 h-24 bg-gradient-to-br from-chart-3/10 to-accent/10 animate-sophisticated-float animation-delay-500 rounded-full blur-xl" />
+    <section className="py-20 px-4 relative overflow-hidden">
+      {/* Subtle background elements */}
+      <div className="absolute top-20 right-20 w-32 h-32 bg-gradient-to-r from-accent/3 to-primary/3 rounded-full animate-sophisticated-float blur-2xl" />
+      <div className="absolute bottom-32 left-32 w-24 h-24 bg-gradient-to-l from-primary/5 to-accent/5 animate-liquid-morph blur-xl" />
+      <div className="absolute top-1/2 left-20 w-20 h-20 bg-gradient-to-br from-chart-3/5 to-accent/5 animate-sophisticated-float animation-delay-500 rounded-full blur-xl" />
       
       <div className="max-w-7xl mx-auto relative z-10">
-        <div className="text-center mb-20">
-          <h2 className="text-4xl md:text-5xl font-bold text-foreground leading-tight mb-6">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground leading-tight mb-4">
             <span className="inline-block">What</span>{" "}
             <span className="inline-block">Our</span>{" "}
             <span className="inline-block">
@@ -73,108 +78,111 @@ export function TestimonialsSection() {
             </span>{" "}
             <span className="inline-block">Say</span>
           </h2>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            Don't just take our word for it. Here's what our clients have to say about working with us and the exceptional results we've delivered together.
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            Don't just take our word for it. Here's what our clients have to say about working with us.
           </p>
         </div>
 
-        {/* Enhanced testimonials carousel */}
-        <div className="relative max-w-5xl mx-auto mb-8">
-          <div className="overflow-hidden">
+        {/* Enhanced testimonials carousel - 2 cards per slide */}
+        <div className="relative max-w-7xl mx-auto mb-12">
+          <div className="overflow-hidden rounded-lg">
             <div
               className="flex transition-transform duration-700 ease-in-out"
-              style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+              style={{ transform: `translateX(-${Math.floor(currentIndex / 2) * 100}%)` }}
             >
-              {testimonials.map((testimonial, index) => (
-                <div key={index} className="w-full flex-shrink-0 px-6 mb-8">
-                  {/* Clean modern testimonial card */}
-                  <div className="relative group max-w-4xl mx-auto">
-                    {/* Main card with subtle glass effect */}
-                    <div className="relative p-10 md:p-16 rounded-2xl bg-background/80 backdrop-blur-md border border-border/40 shadow-xl hover:shadow-2xl transition-all duration-500 hover:border-accent/30">
-                      
-                      {/* Subtle gradient overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-accent/[0.02] to-primary/[0.02] rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                      
-                      {/* Content container */}
-                      <div className="relative z-10 text-center">
-                        
-                        {/* Stars at top */}
-                        <div className="flex items-center justify-center mb-10 gap-1">
-                          {[...Array(testimonial.rating)].map((_, i) => (
-                            <Star key={i} className="w-6 h-6 text-yellow-400 fill-current" />
-                          ))}
-                        </div>
-
-                        {/* Main quote */}
-                        <blockquote className="text-lg md:text-xl lg:text-2xl text-foreground/90 text-center mb-12 leading-relaxed font-normal max-w-3xl mx-auto">
-                          <span className="text-accent/70 text-4xl mr-2">"</span>
-                          {testimonial.content}
-                          <span className="text-accent/70 text-4xl ml-2">"</span>
-                        </blockquote>
-
-                        {/* Project info */}
-                        <div className="inline-flex items-center px-5 py-2 bg-accent/8 text-accent rounded-xl text-sm font-medium mb-10 border border-accent/15">
-                          Project: {testimonial.project}
-                        </div>
-
-                        {/* Client info section */}
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-6 border-t border-border/30">
+              {Array.from({ length: Math.ceil(testimonials.length / 2) }, (_, slideIndex) => (
+                <div key={slideIndex} className="w-full flex-shrink-0 px-4 py-2">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                    {testimonials.slice(slideIndex * 2, slideIndex * 2 + 2).map((testimonial, cardIndex) => (
+                      <div key={slideIndex * 2 + cardIndex} className="group h-full">
+                        {/* Clean and compact testimonial card */}
+                        <div className="relative h-full min-h-[400px] p-6 rounded-xl bg-card border border-border shadow-sm hover:shadow-md transition-all duration-300 hover:border-accent/40 flex flex-col">
                           
-                          {/* Simple clean avatar */}
-                          <div className="relative">
-                            <img
-                              src={testimonial.image || "/placeholder-user.jpg"}
-                              alt={testimonial.name}
-                              className="w-16 h-16 rounded-full object-cover border-3 border-background shadow-md"
-                            />
-                            {/* Subtle ring */}
-                            <div className="absolute -inset-1 rounded-full border border-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                          </div>
+                          {/* Subtle hover effect */}
+                          <div className="absolute inset-0 bg-gradient-to-br from-accent/[0.01] to-primary/[0.01] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                           
-                          {/* Client details */}
-                          <div className="text-center sm:text-left">
-                            <h4 className="font-semibold text-foreground text-lg mb-1">
-                              {testimonial.name}
-                            </h4>
-                            <p className="text-muted-foreground text-sm mb-1">
-                              {testimonial.role}
-                            </p>
-                            <p className="text-accent font-medium text-sm">
-                              {testimonial.company}
-                            </p>
+                          {/* Content container with proper spacing */}
+                          <div className="relative z-10 flex flex-col h-full">
+                            
+                            {/* Stars and project info at top */}
+                            <div className="flex items-center justify-between mb-6">
+                              <div className="flex items-center gap-0.5">
+                                {[...Array(testimonial.rating)].map((_, i) => (
+                                  <Star key={i} className="w-4 h-4 text-yellow-500 fill-current" />
+                                ))}
+                              </div>
+                              <div className="px-3 py-1 bg-accent/10 text-accent rounded-full text-xs font-medium border border-accent/20">
+                                {testimonial.project}
+                              </div>
+                            </div>
+
+                            {/* Quote content - with proper spacing */}
+                            <div className="flex-1 flex flex-col justify-center mb-6">
+                              <Quote className="w-5 h-5 text-accent/60 mb-3" />
+                              <blockquote className="text-foreground/85 text-sm leading-relaxed">
+                                {testimonial.content}
+                              </blockquote>
+                            </div>
+
+                            {/* Client info section - properly positioned at bottom */}
+                            <div className="flex items-center gap-3 pt-6 border-t border-border/50 mt-auto">
+                              
+                              {/* Avatar */}
+                              <div className="relative flex-shrink-0">
+                                <img
+                                  src={testimonial.image || "/placeholder-user.jpg"}
+                                  alt={testimonial.name}
+                                  className="w-12 h-12 rounded-full object-cover border border-border/50"
+                                />
+                                <div className="absolute -inset-0.5 rounded-full border border-accent/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                              </div>
+                              
+                              {/* Client details - with proper spacing */}
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-medium text-foreground text-sm mb-1 truncate">
+                                  {testimonial.name}
+                                </h4>
+                                <p className="text-muted-foreground text-xs mb-0.5 truncate">
+                                  {testimonial.role}
+                                </p>
+                                <p className="text-accent font-medium text-xs truncate">
+                                  {testimonial.company}
+                                </p>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Simple elegant navigation dots */}
-          <div className="flex justify-center mt-16 mb-8 space-x-2">
-            {testimonials.map((_, index) => (
+          {/* Clean navigation dots */}
+          <div className="flex justify-center mt-10 space-x-2">
+            {Array.from({ length: Math.ceil(testimonials.length / 2) }, (_, index) => (
               <button
                 key={index}
-                onClick={() => setCurrentIndex(index)}
-                className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
-                  index === currentIndex
-                    ? "bg-accent w-8"
-                    : "bg-muted-foreground/40 hover:bg-accent/60"
+                onClick={() => setCurrentIndex(index * 2)}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  Math.floor(currentIndex / 2) === index
+                    ? "bg-accent w-6"
+                    : "bg-muted-foreground/30 w-2 hover:bg-accent/60"
                 }`}
               />
             ))}
           </div>
         </div>
 
-        {/* Simple call to action */}
-        <div className="text-center mt-12 p-8 rounded-xl bg-accent/5 border border-accent/10 max-w-3xl mx-auto">
-          <h3 className="text-xl font-semibold text-foreground mb-3">Ready to Start Your Project?</h3>
-          <p className="text-muted-foreground mb-6 text-sm">
+        {/* Clean call to action */}
+        <div className="text-center mt-8 p-6 rounded-xl bg-accent/5 border border-accent/15 max-w-lg mx-auto">
+          <h3 className="text-lg font-semibold text-foreground mb-2">Ready to Start Your Project?</h3>
+          <p className="text-muted-foreground mb-4 text-sm leading-relaxed">
             Join our satisfied clients and let's create something amazing together.
           </p>
-          <button className="inline-flex items-center px-6 py-2.5 bg-accent text-white rounded-lg font-medium hover:bg-accent/90 transition-colors duration-300">
+          <button className="inline-flex items-center px-6 py-2.5 bg-accent text-white rounded-lg font-medium hover:bg-accent/90 transition-colors duration-300 text-sm shadow-sm hover:shadow-md">
             Get Started
           </button>
         </div>

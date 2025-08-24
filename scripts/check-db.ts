@@ -68,7 +68,7 @@ async function checkDatabase() {
         console.log(`  📝 ${project.title}`)
         console.log(`     Category: ${project.category || 'Not set'}`)
         console.log(`     Status: ${project.status}`)
-        console.log(`     Type: ${project.type || (project.isTeamProject ? 'team' : 'individual')}`)
+        console.log(`     Type: ${project.type}`)
         console.log(`     Created by: ${project.createdBy?.name || 'Unknown'}`)
         console.log(`     Featured: ${project.featured ? 'Yes' : 'No'}`)
         if (project.technologies && project.technologies.length > 0) {
@@ -100,23 +100,22 @@ async function checkDatabase() {
         console.log(`  - ${stat._id}: ${stat.count}`)
       })
       
-      // Project type breakdown (new vs old field)
+      // Project type breakdown using consistent fields
       console.log('\n🔄 Project Type Breakdown:')
       const typeBreakdown = await Project.aggregate([
         {
           $group: {
-            _id: {
-              type: '$type',
-              isTeamProject: '$isTeamProject'
-            },
+            _id: '$type',
             count: { $sum: 1 }
           }
+        },
+        {
+          $sort: { count: -1 }
         }
       ])
       
       typeBreakdown.forEach(stat => {
-        const type = stat._id.type || (stat._id.isTeamProject ? 'team (legacy)' : 'individual (legacy)')
-        console.log(`  - ${type}: ${stat.count}`)
+        console.log(`  - ${stat._id}: ${stat.count}`)
       })
       
       // Featured projects

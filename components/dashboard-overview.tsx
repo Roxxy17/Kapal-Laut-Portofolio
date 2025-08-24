@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useAuth } from "@/components/auth-context"
+import { RecentActivity } from "@/components/recent-activity"
 import { FolderOpen, Plus, TrendingUp, Users, Eye, Github } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
@@ -16,9 +17,9 @@ interface Project {
   shortDescription?: string
   category: string
   technologies: string[]
-  status: 'draft' | 'published' | 'archived'
+  status: 'draft' | 'completed' | 'archived'
   featured: boolean
-  isTeamProject: boolean
+  type: 'individual' | 'team'
   createdBy: {
     _id: string
     name: string
@@ -177,7 +178,7 @@ export function DashboardOverview() {
   // Helper function to get status badge variant
   const getStatusVariant = (status: string) => {
     switch (status) {
-      case 'published': return 'default'
+      case 'completed': return 'default'
       case 'draft': return 'secondary'
       case 'archived': return 'outline'
       default: return 'outline'
@@ -513,7 +514,7 @@ export function DashboardOverview() {
                       >
                         {project.status}
                       </Badge>
-                      {project.isTeamProject && (
+                      {project.type === 'team' && (
                         <Badge variant="outline" className="text-xs">
                           <Users className="w-3 h-3 mr-1" />
                           Team
@@ -626,29 +627,7 @@ export function DashboardOverview() {
 
             <div className="pt-6 border-t border-border/50">
               <h4 className="font-semibold mb-4 text-foreground">Recent Activity</h4>
-              <div className="space-y-4 text-sm">
-                <div className="flex items-start space-x-3 p-3 rounded-lg bg-accent/20 border border-border/30">
-                  <div className="w-2 h-2 bg-primary rounded-full mt-2 animate-pulse"></div>
-                  <div>
-                    <span className="text-foreground font-medium">Updated "Personal Portfolio v2"</span>
-                    <p className="text-xs text-muted-foreground mt-1">2 hours ago</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-3 p-3 rounded-lg bg-accent/10 border border-border/20">
-                  <div className="w-2 h-2 bg-chart-2 rounded-full mt-2"></div>
-                  <div>
-                    <span className="text-foreground font-medium">Joined team project "Healthcare Dashboard"</span>
-                    <p className="text-xs text-muted-foreground mt-1">1 day ago</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-3 p-3 rounded-lg bg-accent/10 border border-border/20">
-                  <div className="w-2 h-2 bg-chart-3 rounded-full mt-2"></div>
-                  <div>
-                    <span className="text-foreground font-medium">Profile viewed 23 times this week</span>
-                    <p className="text-xs text-muted-foreground mt-1">3 days ago</p>
-                  </div>
-                </div>
-              </div>
+              <RecentActivity />
             </div>
           </CardContent>
         </Card>

@@ -6,18 +6,16 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { useToast } from '@/hooks/use-toast'
 import { 
   ArrowLeft, 
-  Edit, 
-  Trash2, 
   ExternalLink, 
   Github, 
   Calendar,
-  User,
   Users,
+  User,
   Loader2,
   Eye,
+  Heart,
   Code,
   Globe
 } from 'lucide-react'
@@ -36,6 +34,8 @@ interface Project {
   featured: boolean
   status: string
   type: 'individual' | 'team'
+  views: number
+  likes: number
   createdBy: {
     _id: string
     name: string
@@ -49,13 +49,12 @@ interface ProjectDetailPageProps {
   params: Promise<{ id: string }>
 }
 
-export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
+export default function PublicProjectDetailPage({ params }: ProjectDetailPageProps) {
   const router = useRouter()
-  const { toast } = useToast()
   const [project, setProject] = useState<Project | null>(null)
   const [loading, setLoading] = useState(true)
-  const [deleteLoading, setDeleteLoading] = useState(false)
   const [projectId, setProjectId] = useState<string>('')
+  const [liked, setLiked] = useState(false)
 
   useEffect(() => {
     const getParams = async () => {
@@ -74,103 +73,48 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
   const fetchProject = async () => {
     try {
       setLoading(true)
-      const token = localStorage.getItem('token')
-      const response = await fetch(`/api/projects/${projectId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
+      const response = await fetch(`/api/projects/${projectId}`)
 
       if (response.ok) {
         const data = await response.json()
         setProject(data.project)
+        
+        // Increment view count
+        incrementViews()
       } else {
-        toast({
-          title: "Error",
-          description: "Failed to load project details",
-          variant: "destructive",
-        })
-        router.push('/dashboard/projects')
+        router.push('/')
       }
     } catch (error) {
       console.error('Error fetching project:', error)
-      toast({
-        title: "Error",
-        description: "An error occurred while loading project",
-        variant: "destructive",
-      })
-      router.push('/dashboard/projects')
+      router.push('/')
     } finally {
       setLoading(false)
     }
   }
 
-  const handleEdit = () => {
-    router.push(`/dashboard/projects/${projectId}/edit`)
+  const incrementViews = async () => {
+    try {
+      await fetch(`/api/projects/${projectId}/view`, {
+        method: 'POST'
+      })
+    } catch (error) {
+      console.error('Error incrementing views:', error)
+    }
   }
 
-  const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
-      return
-    }
-
+  const handleLike = async () => {
     try {
-      setDeleteLoading(true)
-      const token = localStorage.getItem('token')
-      const response = await fetch(`/api/projects/${projectId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      const response = await fetch(`/api/projects/${projectId}/like`, {
+        method: 'POST'
       })
-
+      
       if (response.ok) {
-        toast({
-          title: "Success",
-          description: "Project deleted successfully",
-        })
-        router.push('/dashboard/projects')
-      } else {
-        const error = await response.json()
-        toast({
-          title: "Error",
-          description: error.message || "Failed to delete project",
-          variant: "destructive",
-        })
+        const data = await response.json()
+        setProject(prev => prev ? { ...prev, likes: data.likes } : null)
+        setLiked(!liked)
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "An error occurred while deleting the project",
-        variant: "destructive",
-      })
-    } finally {
-      setDeleteLoading(false)
-    }
-  }
-
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'default'
-      case 'draft':
-        return 'secondary'
-      case 'in progress':
-        return 'outline'
-      case 'completed':
-        return 'default'
-      case 'planning':
-        return 'secondary'
-      case 'in-progress':
-        return 'outline'
-      case 'review':
-        return 'outline'
-      case 'testing':
-        return 'outline'
-      case 'on-hold':
-        return 'destructive'
-      default:
-        return 'secondary'
+      console.error('Error liking project:', error)
     }
   }
 
@@ -181,7 +125,6 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
       case 'draft':
       case 'planning':
         return 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20'
-      case 'in progress':
       case 'in-progress':
       case 'review':
       case 'testing':
@@ -190,6 +133,23 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
         return 'bg-red-500/10 text-red-600 border-red-500/20'
       default:
         return 'bg-gray-500/10 text-gray-600 border-gray-500/20'
+    }
+  }
+
+  const getCategoryDisplayName = (category: string) => {
+    switch (category) {
+      case 'web-development':
+        return 'Web Development'
+      case 'mobile-development':
+        return 'Mobile Development'
+      case 'ui-ux-design':
+        return 'UI/UX Design'
+      case 'data-science':
+        return 'Data Science'
+      case 'devops':
+        return 'DevOps'
+      default:
+        return category.charAt(0).toUpperCase() + category.slice(1)
     }
   }
 
@@ -214,15 +174,11 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
         <div className="max-w-6xl mx-auto px-4 py-8">
           <div className="text-center py-20">
             <h1 className="text-2xl font-bold text-foreground mb-4">Project Not Found</h1>
-            <p className="text-muted-foreground mb-6">The project you're looking for doesn't exist or has been deleted.</p>
-            <button 
-              onClick={() => router.push('/dashboard/projects')} 
-              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 cursor-pointer"
-              style={{ pointerEvents: 'all', zIndex: 1000 }}
-            >
+            <p className="text-muted-foreground mb-6">The project you're looking for doesn't exist or has been removed.</p>
+            <Button onClick={() => router.push('/')} variant="outline">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Projects
-            </button>
+              Back to Home
+            </Button>
           </div>
         </div>
       </div>
@@ -235,42 +191,37 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
-            <button
-              onClick={() => router.push('/dashboard/projects')}
-              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3 cursor-pointer"
-              style={{ pointerEvents: 'all', zIndex: 1000 }}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push('/')}
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
-            </button>
+            </Button>
             <div>
               <h1 className="text-3xl font-bold text-foreground">{project.title}</h1>
               <p className="text-muted-foreground mt-1">{project.shortDescription}</p>
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleEdit}
-              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3 cursor-pointer"
-              style={{ pointerEvents: 'all', zIndex: 1000 }}
-            >
-              <Edit className="w-4 h-4 mr-2" />
-              Edit
-            </button>
-            <button
-              onClick={handleDelete}
-              disabled={deleteLoading}
-              className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-destructive text-destructive-foreground hover:bg-destructive/90 h-9 px-3 cursor-pointer"
-              style={{ pointerEvents: 'all', zIndex: 1000 }}
-            >
-              {deleteLoading ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Trash2 className="w-4 h-4 mr-2" />
-              )}
-              Delete
-            </button>
+          <div className="flex items-center gap-4">
+            {/* Views and Likes */}
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <Eye className="w-4 h-4" />
+                <span>{project.views.toLocaleString()}</span>
+              </div>
+              <button
+                onClick={handleLike}
+                className={`flex items-center gap-1 transition-colors ${
+                  liked ? 'text-red-500' : 'hover:text-red-500'
+                }`}
+              >
+                <Heart className={`w-4 h-4 ${liked ? 'fill-current' : ''}`} />
+                <span>{project.likes.toLocaleString()}</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -297,7 +248,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Eye className="w-5 h-5" />
-                  Project Description
+                  About This Project
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -342,7 +293,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-muted-foreground">Status</span>
                   <Badge className={getStatusBadgeColor(project.status)}>
-                    {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
+                    {project.status.charAt(0).toUpperCase() + project.status.slice(1).replace('-', ' ')}
                   </Badge>
                 </div>
 
@@ -351,7 +302,7 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                 {/* Category */}
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-muted-foreground">Category</span>
-                  <Badge variant="outline">{project.category}</Badge>
+                  <Badge variant="outline">{getCategoryDisplayName(project.category)}</Badge>
                 </div>
 
                 <Separator />
@@ -377,14 +328,15 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
                 <Separator />
 
                 {/* Featured */}
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-muted-foreground">Featured</span>
-                  <Badge variant={project.featured ? "default" : "secondary"}>
-                    {project.featured ? "Yes" : "No"}
-                  </Badge>
-                </div>
-
-                <Separator />
+                {project.featured && (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-muted-foreground">Featured</span>
+                      <Badge variant="default">⭐ Featured</Badge>
+                    </div>
+                    <Separator />
+                  </>
+                )}
 
                 {/* Created Date */}
                 <div className="flex items-center justify-between">
@@ -397,10 +349,19 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
 
                 {/* Creator */}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-muted-foreground">Creator</span>
+                  <span className="text-sm font-medium text-muted-foreground">Created by</span>
                   <div className="flex items-center gap-1 text-sm">
-                    <User className="w-4 h-4" />
-                    {project.createdBy.name}
+                    {project.type === 'team' ? (
+                      <>
+                        <Users className="w-4 h-4" />
+                        <span>Kapal Laut Team</span>
+                      </>
+                    ) : (
+                      <>
+                        <User className="w-4 h-4" />
+                        <span>{project.createdBy.name}</span>
+                      </>
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -435,25 +396,25 @@ export default function ProjectDetailPage({ params }: ProjectDetailPageProps) {
               </CardHeader>
               <CardContent className="space-y-3">
                 {project.liveUrl && (
-                  <button
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
                     onClick={() => window.open(project.liveUrl, '_blank')}
-                    className="inline-flex items-center justify-start rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 w-full cursor-pointer"
-                    style={{ pointerEvents: 'all', zIndex: 1000 }}
                   >
                     <ExternalLink className="w-4 h-4 mr-2" />
                     View Live Demo
-                  </button>
+                  </Button>
                 )}
                 
                 {project.githubUrl && (
-                  <button
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
                     onClick={() => window.open(project.githubUrl, '_blank')}
-                    className="inline-flex items-center justify-start rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 w-full cursor-pointer"
-                    style={{ pointerEvents: 'all', zIndex: 1000 }}
                   >
                     <Github className="w-4 h-4 mr-2" />
                     View Source Code
-                  </button>
+                  </Button>
                 )}
 
                 {!project.liveUrl && !project.githubUrl && (

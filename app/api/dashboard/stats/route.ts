@@ -44,12 +44,12 @@ export async function GET(request: NextRequest) {
     // Get user's individual projects (created by this user)
     const userIndividualProjects = allProjects.filter(project => 
       project.createdBy._id.toString() === user._id.toString() && 
-      (project.type === 'individual' || !project.isTeamProject)
+      project.type === 'individual'
     )
     
     // Get team projects (either created by user or where user is collaborator)
     const teamProjects = allProjects.filter(project => 
-      project.type === 'team' || project.isTeamProject ||
+      project.type === 'team' ||
       (project.collaborators && project.collaborators.some((collab: any) => 
         collab.toString() === user._id.toString()
       ))
@@ -129,7 +129,7 @@ export async function GET(request: NextRequest) {
       userProjects: userProjects.length,
       userIndividualProjects: userIndividualProjects.length,
       teamProjects: teamProjects.length,
-      individualProjects: allProjects.filter(p => !p.isTeamProject).length, // All individual projects in system
+      individualProjects: allProjects.filter(p => p.type === 'individual').length, // All individual projects in system
       recentProjects: userProjects.slice(0, 3), // User's recent projects
       featuredProjects,
       categoriesCount,
@@ -145,7 +145,7 @@ export async function GET(request: NextRequest) {
       growthPercentage,
       totalViews,
       // Additional stats
-      completionRate: Math.round((userProjects.filter(p => p.status === 'published').length / Math.max(userProjects.length, 1)) * 100),
+      completionRate: Math.round((userProjects.filter(p => p.status === 'completed').length / Math.max(userProjects.length, 1)) * 100),
       averageProjectAge: userProjects.length > 0 ? Math.round(
         userProjects.reduce((sum, p) => {
           const days = Math.floor((Date.now() - new Date(p.createdAt).getTime()) / (1000 * 60 * 60 * 24))

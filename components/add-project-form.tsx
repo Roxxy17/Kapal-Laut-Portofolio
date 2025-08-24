@@ -46,6 +46,67 @@ const availableTechnologies = [
   "GSAP",
 ]
 
+// Helper function to convert ibb.co URL to direct image URL
+const convertToDirectImageUrl = async (url: string): Promise<string> => {
+  // Fix common URL typos
+  url = url.replace('ibb.co.com', 'ibb.co').replace('ibb.co./', 'ibb.co/')
+  
+  // For ibb.co, we need a different approach since direct URL construction doesn't work reliably
+  if (url.includes('ibb.co/') && !url.includes('i.ibb.co')) {
+    // Extract the image ID from URL like https://ibb.co/abc123
+    const match = url.match(/ibb\.co\/([a-zA-Z0-9]+)/)
+    if (match) {
+      // Return the original URL for now - user needs to get direct image URL manually
+      return url
+    }
+  }
+  
+  // If it's already a direct image URL, return as is
+  if (url.match(/\.(jpg|jpeg|png|gif|webp)(\?|$)/i)) {
+    return url
+  }
+  
+  // For imgur, convert to direct URL
+  if (url.includes('imgur.com/') && !url.includes('i.imgur.com')) {
+    const imgurMatch = url.match(/imgur\.com\/([a-zA-Z0-9]+)/)
+    if (imgurMatch) {
+      return `https://i.imgur.com/${imgurMatch[1]}.jpg`
+    }
+  }
+  
+  return url
+}
+
+// Helper function to validate image URL
+const validateImageUrl = (url: string): boolean => {
+  // Check if it's a valid URL structure
+  try {
+    const urlObj = new URL(url)
+    
+    // Check if it's a direct image URL
+    if (url.match(/\.(jpg|jpeg|png|gif|webp)(\?|$)/i)) {
+      return true
+    }
+    
+    // Check if it's from supported image hosting services
+    const supportedDomains = [
+      'ibb.co',
+      'i.ibb.co', 
+      'imgur.com',
+      'i.imgur.com',
+      'postimg.cc',
+      'imgbb.com',
+      'i.imgbb.com',
+      'drive.google.com',
+      'dropbox.com'
+    ]
+    
+    return supportedDomains.some(domain => urlObj.hostname.includes(domain))
+  } catch {
+    return false
+  }
+}
+
 interface AddProjectFormProps {
   initialData?: any
   isEdit?: boolean
@@ -58,16 +119,21 @@ export function AddProjectForm({ initialData, isEdit = false }: AddProjectFormPr
   const [formData, setFormData] = useState({
     title: "",
     description: "",
+    shortDescription: "",
+    category: "",
     type: "",
     status: "",
     technologies: [] as string[],
     demoUrl: "",
     githubUrl: "",
     imageUrl: "",
+    gallery: [] as string[],
+    featured: false,
     collaborators: [] as string[],
   })
   const [newTech, setNewTech] = useState("")
   const [newCollaborator, setNewCollaborator] = useState("")
+  const [newGalleryUrl, setNewGalleryUrl] = useState("")
   const [success, setSuccess] = useState(false)
   const [projectId, setProjectId] = useState<string | null>(null)
   const [isEditMode, setIsEditMode] = useState(false)
@@ -81,22 +147,26 @@ export function AddProjectForm({ initialData, isEdit = false }: AddProjectFormPr
       // Convert status from database format to form format
       const statusMap: {[key: string]: string} = {
         'draft': 'Draft',
-        'published': 'Published', 
+        'completed': 'Completed', 
         'planning': 'Planning',
-        'in progress': 'In Progress',
+        'in-progress': 'In Progress',
         'completed': 'Completed',
-        'on hold': 'On Hold'
+        'on-hold': 'On Hold'
       }
       
       setFormData({
         title: initialData.title || "",
         description: initialData.description || "",
+        shortDescription: initialData.shortDescription || "",
+        category: initialData.category || "",
         type: initialData.type || "",
         status: statusMap[initialData.status] || "Planning",
         technologies: initialData.technologies || [],
         demoUrl: initialData.liveUrl || "",
         githubUrl: initialData.githubUrl || "",
         imageUrl: initialData.image || "",
+        gallery: initialData.gallery || [],
+        featured: initialData.featured || false,
         collaborators: initialData.collaborators?.map((c: any) => c.name || c) || [],
       })
     }
@@ -176,25 +246,35 @@ export function AddProjectForm({ initialData, isEdit = false }: AddProjectFormPr
       const statusMap: {[key: string]: string} = {
         'Draft': 'draft',
         'Planning': 'planning',
-        'In Progress': 'in progress',
+        'In Progress': 'in-progress',
         'Completed': 'completed',
-        'On Hold': 'on hold'
+        'On Hold': 'on-hold'
       }
+      
+      // Generate random views and likes for new projects
+      const generateRandomStats = () => ({
+        views: Math.floor(Math.random() * 1000) + 50, // 50-1050 views
+        likes: Math.floor(Math.random() * 200) + 10   // 10-210 likes
+      })
+      
+      const stats = isEditMode ? {} : generateRandomStats()
       
       const projectData = {
         title: formData.title,
         description: formData.description,
-        shortDescription: formData.description.substring(0, 150) + "...",
-        category: formData.type, // For backward compatibility
+        shortDescription: formData.shortDescription || formData.description.substring(0, 150) + "...",
+        category: formData.category,
         technologies: formData.technologies,
         image: formData.imageUrl || "/placeholder.jpg",
+        gallery: formData.gallery,
         liveUrl: formData.demoUrl,
         githubUrl: formData.githubUrl,
         status: statusMap[formData.status] || 'draft',
-        featured: false,
+        featured: formData.featured,
         collaborators: formData.collaborators,
         type: formData.type,
-        isTeamProject: formData.type === 'team'
+        isTeamProject: formData.type === 'team',
+        ...stats
       }
 
       const url = isEditMode ? `/api/projects/${projectId}` : '/api/projects'
@@ -359,6 +439,46 @@ export function AddProjectForm({ initialData, isEdit = false }: AddProjectFormPr
                 />
               </div>
 
+              <div className="space-y-3">
+                <Label htmlFor="shortDescription" className="text-sm font-semibold">
+                  Short Description *
+                </Label>
+                <Textarea
+                  id="shortDescription"
+                  placeholder="A brief summary of your project (max 200 characters)"
+                  className="min-h-[80px] border-border/50 focus:border-primary/50 bg-background/50 resize-none"
+                  value={formData.shortDescription}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, shortDescription: e.target.value }))}
+                  maxLength={200}
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  {formData.shortDescription.length}/200 characters
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <Label htmlFor="category" className="text-sm font-semibold">
+                  Category *
+                </Label>
+                <Select
+                  value={formData.category}
+                  onValueChange={(value) => setFormData((prev) => ({ ...prev, category: value }))}
+                >
+                  <SelectTrigger className="h-12 border-border/50 bg-background/50">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="web-development">Web Development</SelectItem>
+                    <SelectItem value="mobile-development">Mobile Development</SelectItem>
+                    <SelectItem value="ui-ux-design">UI/UX Design</SelectItem>
+                    <SelectItem value="data-science">Data Science</SelectItem>
+                    <SelectItem value="devops">DevOps</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-3">
                   <Label htmlFor="type" className="text-sm font-semibold">
@@ -430,6 +550,155 @@ export function AddProjectForm({ initialData, isEdit = false }: AddProjectFormPr
                     <Upload className="h-4 w-4" />
                   </Button>
                 </div>
+              </div>
+
+              {/* Gallery Section */}
+              <div className="space-y-3">
+                <Label className="text-sm font-semibold">Gallery Images</Label>
+                <p className="text-xs text-muted-foreground">
+                  <strong>How to get image URLs:</strong><br/>
+                  • <strong>Direct URLs:</strong> https://example.com/image.jpg<br/>
+                  • <strong>ibb.co:</strong> Open your image → Right-click image → "Copy image address"<br/>
+                  • <strong>imgur.com:</strong> https://imgur.com/abc123 (auto-converted)<br/>
+                  • <strong>Google Drive:</strong> Share → Get link → Change to "Anyone with link can view"
+                </p>
+                <div className="flex space-x-2">
+                  <Input
+                    placeholder="https://ibb.co/abc123 or https://example.com/image.jpg"
+                    value={newGalleryUrl}
+                    onChange={(e) => setNewGalleryUrl(e.target.value)}
+                    className="h-10 border-border/50 focus:border-primary/50 bg-background/50"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      if (newGalleryUrl.trim()) {
+                        const trimmedUrl = newGalleryUrl.trim()
+                        
+                        // Validate URL
+                        if (!validateImageUrl(trimmedUrl)) {
+                          toast({
+                            title: "Invalid URL",
+                            description: "Please enter a valid image URL. Supported: Direct image URLs (.jpg, .png, etc.) or links from ibb.co, imgur.com",
+                            variant: "destructive"
+                          })
+                          return
+                        }
+                        
+                        // Convert to direct image URL if needed
+                        const directUrl = await convertToDirectImageUrl(trimmedUrl)
+                        
+                        setFormData((prev) => ({
+                          ...prev,
+                          gallery: [...prev.gallery, directUrl]
+                        }))
+                        setNewGalleryUrl("")
+                        
+                        if (trimmedUrl.includes('ibb.co/') && !trimmedUrl.includes('i.ibb.co')) {
+                          toast({
+                            title: "ibb.co URL Added",
+                            description: "For better loading, right-click the image on ibb.co and select 'Copy image address' to get the direct URL",
+                            variant: "default"
+                          })
+                        } else {
+                          toast({
+                            title: "Image Added",
+                            description: "Image added to gallery successfully",
+                            variant: "default"
+                          })
+                        }
+                      }
+                    }}
+                    className="px-4 bg-transparent border-border/50 hover:bg-accent/50"
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add
+                  </Button>
+                </div>
+                {formData.gallery.length > 0 && (
+                  <div className="space-y-3">
+                    {/* Gallery URLs List */}
+                    <div className="flex flex-wrap gap-2">
+                      {formData.gallery.map((url, index) => (
+                        <Badge 
+                          key={index} 
+                          variant="secondary" 
+                          className="bg-accent/10 text-accent border border-accent/20 px-2 py-1"
+                        >
+                          <span className="truncate max-w-[120px]">{url}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                gallery: prev.gallery.filter((_, i) => i !== index)
+                              }))
+                            }}
+                            className="ml-2 text-muted-foreground hover:text-accent"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
+                    
+                    {/* Gallery Preview */}
+                    <div className="mt-4">
+                      <Label className="text-sm font-semibold mb-2 block">Gallery Preview</Label>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-4 border rounded-lg border-border/50 bg-background/50">
+                        {formData.gallery.map((url, index) => (
+                          <div key={index} className="relative aspect-video bg-muted rounded-lg overflow-hidden group">
+                            <img
+                              src={url}
+                              alt={`Gallery ${index + 1}`}
+                              className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                              onLoad={(e) => {
+                                e.currentTarget.nextElementSibling?.classList.add('hidden')
+                              }}
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none'
+                                e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                              }}
+                            />
+                            <div className="hidden absolute inset-0 flex flex-col items-center justify-center bg-muted text-muted-foreground text-xs p-2 text-center">
+                              <div className="mb-1">❌</div>
+                              <div>Failed to load</div>
+                              <div className="text-[10px] opacity-75 mt-1">Check URL or use direct image link</div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  gallery: prev.gallery.filter((_, i) => i !== index)
+                                }))
+                              }}
+                              className="absolute top-1 right-1 bg-destructive/80 text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Featured Checkbox */}
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="featured"
+                  checked={formData.featured}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, featured: e.target.checked }))}
+                  className="w-4 h-4 text-primary border-border/50 rounded focus:ring-primary"
+                />
+                <Label htmlFor="featured" className="text-sm font-semibold">
+                  Mark as Featured Project
+                </Label>
               </div>
 
               <div className="space-y-3">

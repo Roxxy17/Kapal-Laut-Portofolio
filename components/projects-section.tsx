@@ -3,8 +3,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ExternalLink, Github, Users, User, Loader2 } from "lucide-react"
+import { ExternalLink, Github, Users, User, Loader2, Filter } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useState, useEffect } from "react"
 
 interface Project {
@@ -33,15 +34,21 @@ export function ProjectsSection() {
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [statusFilter, setStatusFilter] = useState<string>('all')
 
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const response = await fetch('/api/projects?status=published')
+        setLoading(true)
+        // Fetch all projects without status filter initially - add status=all to get all statuses
+        const response = await fetch('/api/projects?status=all')
         const data = await response.json()
         
+        console.log('API Response:', data) // Debug log
+        
         if (data.success) {
-          setProjects(data.projects)
+          setProjects(data.projects || [])
+          console.log('Projects loaded:', data.projects?.length || 0) // Debug log
         } else {
           setError('Failed to load projects')
         }
@@ -56,9 +63,42 @@ export function ProjectsSection() {
     fetchProjects()
   }, [])
 
+  // Filter projects based on status
+  const filteredProjects = statusFilter === 'all' 
+    ? projects 
+    : projects.filter(project => project.status === statusFilter)
+
   // Filter projects into team and individual based on isTeamProject field
-  const teamProjects = projects.filter(project => project.isTeamProject === true)
-  const individualProjects = projects.filter(project => project.isTeamProject === false)
+  const teamProjects = filteredProjects.filter(project => project.isTeamProject === true)
+  const individualProjects = filteredProjects.filter(project => project.isTeamProject === false)
+
+  // Get status badge variant
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case 'published':
+        return 'default'
+      case 'draft':
+        return 'secondary'
+      case 'in progress':
+        return 'outline'
+      default:
+        return 'secondary'
+    }
+  }
+
+  // Get status badge color
+  const getStatusBadgeColor = (status: string) => {
+    switch (status) {
+      case 'published':
+        return 'bg-green-500/10 text-green-600 border-green-500/20'
+      case 'draft':
+        return 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20'
+      case 'in progress':
+        return 'bg-blue-500/10 text-blue-600 border-blue-500/20'
+      default:
+        return 'bg-gray-500/10 text-gray-600 border-gray-500/20'
+    }
+  }
   return (
     <section id="projects" className="py-24 px-4 relative overflow-hidden">
       {/* Background elements matching other sections */}
@@ -74,9 +114,34 @@ export function ProjectsSection() {
               Projects
             </span>
           </h2>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed mb-8">
             Explore our collaborative team projects and individual portfolio pieces that showcase our expertise and creativity
           </p>
+          
+          {/* Status Filter */}
+          <div className="flex justify-center mb-8">
+            <div className="flex items-center gap-4 bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-3">
+              <Filter className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm font-medium text-muted-foreground">Filter by Status:</span>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-48 bg-background/80 border-border/50">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Projects ({projects.length})</SelectItem>
+                  <SelectItem value="published">
+                    Published ({projects.filter(p => p.status === 'published').length})
+                  </SelectItem>
+                  <SelectItem value="in progress">
+                    In Progress ({projects.filter(p => p.status === 'in progress').length})
+                  </SelectItem>
+                  <SelectItem value="draft">
+                    Draft ({projects.filter(p => p.status === 'draft').length})
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
 
         {loading && (
@@ -112,7 +177,20 @@ export function ProjectsSection() {
             </TabsList>
 
             <TabsContent value="team">
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {teamProjects.length === 0 ? (
+                <div className="text-center py-20">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-muted/50 rounded-full mb-4">
+                    <Users className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">No Team Projects Found</h3>
+                  <p className="text-muted-foreground">
+                    {statusFilter === 'all' 
+                      ? 'No team projects available at the moment.' 
+                      : `No team projects with status "${statusFilter}".`}
+                  </p>
+                </div>
+              ) : (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {teamProjects.map((project, index) => (
                   <div
                     key={project._id}
@@ -134,14 +212,17 @@ export function ProjectsSection() {
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
                         
-                        {/* Featured badge */}
-                        {project.featured && (
-                          <div className="absolute top-4 right-4">
+                        {/* Featured and Status badges */}
+                        <div className="absolute top-4 right-4 flex flex-col gap-2">
+                          {project.featured && (
                             <div className="px-3 py-1.5 rounded-full text-xs font-medium border backdrop-blur-sm bg-accent/20 text-accent border-accent/30">
                               Featured
                             </div>
+                          )}
+                          <div className={`px-3 py-1.5 rounded-full text-xs font-medium border backdrop-blur-sm ${getStatusBadgeColor(project.status)}`}>
+                            {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
                           </div>
-                        )}
+                        </div>
                       </div>
 
                       {/* Content */}
@@ -205,11 +286,25 @@ export function ProjectsSection() {
                     </div>
                   </div>
                 ))}
-              </div>
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="individual">
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {individualProjects.length === 0 ? (
+                <div className="text-center py-20">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-muted/50 rounded-full mb-4">
+                    <User className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">No Individual Projects Found</h3>
+                  <p className="text-muted-foreground">
+                    {statusFilter === 'all' 
+                      ? 'No individual projects available at the moment.' 
+                      : `No individual projects with status "${statusFilter}".`}
+                  </p>
+                </div>
+              ) : (
+                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {individualProjects.map((project, index) => (
                   <div
                     key={project._id}
@@ -231,14 +326,17 @@ export function ProjectsSection() {
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
                         
-                        {/* Featured badge */}
-                        {project.featured && (
-                          <div className="absolute top-3 right-3">
+                        {/* Featured and Status badges */}
+                        <div className="absolute top-3 right-3 flex flex-col gap-1">
+                          {project.featured && (
                             <div className="px-2 py-1 rounded-full text-xs font-medium border backdrop-blur-sm bg-accent/20 text-accent border-accent/30">
                               Featured
                             </div>
+                          )}
+                          <div className={`px-2 py-1 rounded-full text-xs font-medium border backdrop-blur-sm ${getStatusBadgeColor(project.status)}`}>
+                            {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
                           </div>
-                        )}
+                        </div>
                       </div>
 
                       {/* Content - compact */}
@@ -306,7 +404,8 @@ export function ProjectsSection() {
                     </div>
                   </div>
                 ))}
-              </div>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         )}

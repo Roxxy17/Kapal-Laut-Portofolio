@@ -30,7 +30,12 @@ export async function GET(request: NextRequest) {
     const featured = searchParams.get('featured')
     const status = searchParams.get('status') || 'published'
 
-    let query: any = { status }
+    let query: any = {}
+    
+    // Only add status filter if it's not 'all'
+    if (status !== 'all') {
+      query.status = status
+    }
     
     if (category && category !== 'all') {
       query.category = category

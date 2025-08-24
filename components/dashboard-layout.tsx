@@ -126,12 +126,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </div>
 
             <div className="flex items-center space-x-4">
-              <Button size="sm" asChild>
-                <Link href="/dashboard/projects/new">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Project
-                </Link>
-              </Button>
+              <button 
+                onClick={() => router.push('/dashboard/projects/new')}
+                className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-3 cursor-pointer"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Project
+              </button>
               <ThemeToggle />
 
               <DropdownMenu>
@@ -157,17 +158,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/dashboard/settings">
-                      <User className="mr-2 h-4 w-4" />
-                      Profile
-                    </Link>
+                  <DropdownMenuItem onClick={() => router.push('/dashboard/settings')}>
+                    <User className="mr-2 h-4 w-4" />
+                    Profile
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/">
-                      <Home className="mr-2 h-4 w-4" />
-                      Back to Site
-                    </Link>
+                  <DropdownMenuItem onClick={() => router.push('/')}>
+                    <Home className="mr-2 h-4 w-4" />
+                    Back to Site
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout}>

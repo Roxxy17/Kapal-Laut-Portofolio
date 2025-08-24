@@ -4,12 +4,17 @@ import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { Menu, X, User, LogIn, FolderOpen } from "lucide-react"
+import { Menu, X, User, LogIn, FolderOpen, LogOut } from "lucide-react"
 import { useAuth } from "@/components/auth-context"
 
 export function Navigation() {
   const [isOpen, setIsOpen] = useState(false)
-  const { user } = useAuth()
+  const { user, isLoading, logout } = useAuth()
+
+  const handleLogout = () => {
+    logout()
+    window.location.href = '/'
+  }
 
   return (
     <nav className="fixed top-0 w-full bg-background/80 backdrop-blur-md border-b border-border z-50">
@@ -51,7 +56,12 @@ export function Navigation() {
           {/* Right side buttons */}
           <div className="hidden md:flex items-center space-x-4">
             <ThemeToggle />
-            {user ? (
+            {isLoading ? (
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 rounded-full bg-muted animate-pulse"></div>
+                <div className="w-16 h-8 bg-muted rounded animate-pulse"></div>
+              </div>
+            ) : user ? (
               <>
                 <Button variant="ghost" size="sm" asChild>
                   <Link href="/dashboard">
@@ -59,11 +69,15 @@ export function Navigation() {
                     Dashboard
                   </Link>
                 </Button>
-                <Button size="sm" asChild>
+                <Button variant="ghost" size="sm" asChild>
                   <Link href="/dashboard/projects">
                     <FolderOpen className="w-4 h-4 mr-2" />
                     My Projects
                   </Link>
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleLogout}>
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
                 </Button>
               </>
             ) : (

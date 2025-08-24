@@ -22,18 +22,76 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true) // Start with loading true
 
-  // Check for stored auth on mount
+  // Check for stored auth on mount and validate token
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const storedUser = localStorage.getItem('user')
-      const token = localStorage.getItem('token')
-      
-      if (storedUser && token) {
-        setUser(JSON.parse(storedUser))
+    async function validateStoredAuth() {
+      if (typeof window !== 'undefined') {
+        const storedUser = localStorage.getItem('user')
+        const token = localStorage.getItem('token')
+        
+        console.log('[AUTH] Checking stored auth:', {
+          hasStoredUser: !!storedUser,
+          hasToken: !!token
+        })
+        
+        // Also check cookie as fallback
+        const cookieToken = document.cookie
+          .split('; ')
+          .find(row => row.startsWith('auth-token='))
+          ?.split('=')[1]
+        
+        console.log('[AUTH] Cookie token exists:', !!cookieToken)
+        
+        if (storedUser && (token || cookieToken)) {
+          // Use the token from localStorage first, then fallback to cookie
+          const authToken = token || cookieToken
+          
+          // If we have cookieToken but no localStorage token, sync them
+          if (cookieToken && !token) {
+            localStorage.setItem('token', cookieToken)
+          }
+          
+          // Validate token by making a test API call
+          try {
+            const response = await fetch('/api/auth/validate', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+              }
+            })
+            
+            if (response.ok) {
+              const validationData = await response.json()
+              console.log('[AUTH] Token valid, setting user:', validationData.user)
+              setUser(validationData.user)
+              
+              // Update localStorage with fresh data from server
+              localStorage.setItem('user', JSON.stringify(validationData.user))
+            } else {
+              console.log('[AUTH] Token invalid, clearing auth')
+              // Clear invalid auth
+              localStorage.removeItem('user')
+              localStorage.removeItem('token')
+              document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+            }
+          } catch (error) {
+            console.log('[AUTH] Token validation failed:', error)
+            // Clear invalid auth
+            localStorage.removeItem('user')
+            localStorage.removeItem('token')
+            document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+          }
+        } else {
+          console.log('[AUTH] No valid stored auth found')
+        }
       }
+      setIsLoading(false)
     }
+
+    validateStoredAuth()
   }, [])
 
   const login = async (email: string, password: string): Promise<boolean> => {
@@ -51,14 +109,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await response.json()
 
       if (response.ok) {
-        // Store user and token
+        console.log('[AUTH] Login successful:', data)
+        
+        // Store user and token in localStorage only
         if (typeof window !== 'undefined') {
           localStorage.setItem('user', JSON.stringify(data.user))
           localStorage.setItem('token', data.token)
+          
+          console.log('[AUTH] Stored user and token in localStorage')
         }
         
         // Set user state
         setUser(data.user)
+        console.log('[AUTH] User state updated:', data.user)
         return true
       } else {
         console.error('Login failed:', data.error)
@@ -72,10 +135,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      // Call logout API to clear server-side cookie
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+    } catch (error) {
+      console.error('Logout API error:', error)
+    }
+
+    // Clear client-side storage regardless of API success
     if (typeof window !== 'undefined') {
       localStorage.removeItem('user')
       localStorage.removeItem('token')
+      
+      // Remove cookie client-side as well
+      document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
     }
     setUser(null)
   }

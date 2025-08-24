@@ -1,16 +1,16 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Plus,
   Search,
-  Filter,
   MoreHorizontal,
   Eye,
   Edit,
@@ -19,112 +19,173 @@ import {
   Github,
   Calendar,
   FolderOpen,
+  Loader2,
 } from "lucide-react"
-import Link from "next/link"
-
-// Mock projects data
-const mockProjects = [
-  {
-    id: "1",
-    title: "Personal Portfolio v2",
-    description: "Updated portfolio with new projects and improved design system",
-    status: "In Progress",
-    type: "individual",
-    technologies: ["Next.js", "Tailwind CSS", "Framer Motion", "TypeScript"],
-    image: "/placeholder.svg?height=200&width=300",
-    views: 245,
-    likes: 18,
-    createdAt: "2024-01-15",
-    updatedAt: "2024-01-18",
-    links: {
-      demo: "#",
-      github: "#",
-    },
-  },
-  {
-    id: "2",
-    title: "E-commerce Dashboard",
-    description: "Comprehensive admin dashboard for managing online store operations",
-    status: "Completed",
-    type: "individual",
-    technologies: ["React", "TypeScript", "Chart.js", "Material-UI"],
-    image: "/placeholder.svg?height=200&width=300",
-    views: 189,
-    likes: 24,
-    createdAt: "2024-01-10",
-    updatedAt: "2024-01-12",
-    links: {
-      demo: "#",
-      github: "#",
-    },
-  },
-  {
-    id: "3",
-    title: "Healthcare Platform",
-    description: "Collaborative healthcare management system with team members",
-    status: "In Progress",
-    type: "team",
-    technologies: ["Vue.js", "Python", "PostgreSQL", "Docker"],
-    image: "/placeholder.svg?height=200&width=300",
-    views: 156,
-    likes: 31,
-    createdAt: "2024-01-08",
-    updatedAt: "2024-01-17",
-    collaborators: ["Sarah Johnson", "Mike Rodriguez"],
-    links: {
-      demo: "#",
-      github: "#",
-    },
-  },
-  {
-    id: "4",
-    title: "Mobile App UI Kit",
-    description: "Comprehensive UI components library for mobile applications",
-    status: "Planning",
-    type: "individual",
-    technologies: ["Figma", "React Native", "Expo", "Styled Components"],
-    image: "/placeholder.svg?height=200&width=300",
-    views: 67,
-    likes: 12,
-    createdAt: "2024-01-16",
-    updatedAt: "2024-01-16",
-    links: {
-      demo: "#",
-      github: "#",
-    },
-  },
-]
 
 export function ProjectsManagement() {
+  const router = useRouter()
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const handler = () => {
+        router.push('/dashboard/projects/new')
+      }
+      window.addEventListener('add-project-clicked', handler)
+      return () => window.removeEventListener('add-project-clicked', handler)
+    }
+  }, [router])
+  const { toast } = useToast()
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState("all")
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [projects, setProjects] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [deleteLoading, setDeleteLoading] = useState<string | null>(null)
 
-  const filteredProjects = mockProjects.filter((project) => {
-    const matchesSearch =
-      project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.description.toLowerCase().includes(searchQuery.toLowerCase())
+  // Load projects
+  useEffect(() => {
+    loadProjects()
+  }, [statusFilter])
 
-    if (activeTab === "all") return matchesSearch
-    if (activeTab === "individual") return matchesSearch && project.type === "individual"
-    if (activeTab === "team") return matchesSearch && project.type === "team"
+  const loadProjects = async () => {
+    setIsLoading(true)
+    try {
+      const token = localStorage.getItem('token')
+      const params = new URLSearchParams()
+      
+      if (statusFilter !== 'all') {
+        params.append('status', statusFilter)
+      }
 
-    return matchesSearch
-  })
+      const response = await fetch(`/api/projects/user?${params.toString()}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setProjects(data.projects || [])
+      } else {
+        console.error('Failed to load projects')
+        setProjects([])
+      }
+    } catch (error) {
+      console.error('Error loading projects:', error)
+      setProjects([])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Filter projects
+  const searchFilteredProjects = projects.filter(project =>
+    project.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    project.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    project.technologies?.some((tech: string) => 
+      tech.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  )
+
+  const getAllProjects = () => searchFilteredProjects
+  const getIndividualProjects = () => searchFilteredProjects.filter(project => 
+    project.type === 'individual' || (!project.type && !project.isTeamProject)
+  )
+  const getTeamProjects = () => searchFilteredProjects.filter(project => 
+    project.type === 'team' || (!project.type && project.isTeamProject)
+  )
+
+  // Handlers
+  const handleAddProject = () => {
+    router.push('/dashboard/projects/new')
+  }
+
+  const handleViewProject = (id: string) => {
+    router.push(`/dashboard/projects/${id}`)
+  }
+
+  const handleEditProject = (id: string) => {
+    router.push(`/dashboard/projects/${id}/edit`)
+  }
+
+  const handleDeleteProject = async (projectId: string) => {
+    setDeleteLoading(projectId)
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`/api/projects/${projectId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: "Project deleted successfully",
+        })
+        loadProjects()
+      } else {
+        const error = await response.json()
+        toast({
+          title: "Error",
+          description: error.message || "Failed to delete project",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An error occurred while deleting the project",
+        variant: "destructive",
+      })
+    } finally {
+      setDeleteLoading(null)
+    }
+  }
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value)
+  }
+
+  const handleStatusChange = (value: string) => {
+    setStatusFilter(value)
+  }
+
+  const handleOpenUrl = (url: string) => {
+    window.open(url, '_blank')
+  }
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-8 bg-muted rounded animate-pulse" />
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="h-64 bg-muted rounded animate-pulse" />
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6 animate-fade-in-up">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-serif font-bold text-foreground">My Projects</h2>
-          <p className="text-muted-foreground">Manage your individual and collaborative projects</p>
+          <h1 className="text-2xl font-bold tracking-tight">Projects</h1>
+          <p className="text-muted-foreground">
+            Manage your projects and track progress
+          </p>
         </div>
-        <Button asChild>
-          <Link href="/dashboard/projects/new">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Project
-          </Link>
-        </Button>
+          <button 
+            onClick={handleAddProject}
+            style={{ border: '', pointerEvents: 'all', zIndex: 1000 }}
+            className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 cursor-pointer"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Add Project
+        </button>
       </div>
 
       {/* Search and Filter */}
@@ -138,147 +199,279 @@ export function ProjectsManagement() {
             className="pl-10"
           />
         </div>
-        <Button variant="outline">
-          <Filter className="w-4 h-4 mr-2" />
-          Filter
-        </Button>
+        <Select value={statusFilter} onValueChange={handleStatusChange}>
+          <SelectTrigger className="w-[180px]" style={{ border: '', pointerEvents: 'all', zIndex: 1000 }}>
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="planning">Planning</SelectItem>
+            <SelectItem value="in-progress">In Progress</SelectItem>
+            <SelectItem value="review">In Review</SelectItem>
+            <SelectItem value="testing">Testing</SelectItem>
+            <SelectItem value="completed">Completed</SelectItem>
+            <SelectItem value="on-hold">On Hold</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Projects Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList className="grid w-full max-w-md grid-cols-3">
-          <TabsTrigger value="all">All Projects</TabsTrigger>
-          <TabsTrigger value="individual">Individual</TabsTrigger>
-          <TabsTrigger value="team">Team</TabsTrigger>
+          <TabsTrigger value="all" style={{ border: '', pointerEvents: 'all', zIndex: 1000 }}>All Projects</TabsTrigger>
+          <TabsTrigger value="individual" style={{ border: '', pointerEvents: 'all', zIndex: 1000 }}>Individual</TabsTrigger>
+          <TabsTrigger value="team" style={{ border: '', pointerEvents: 'all', zIndex: 1000 }}>Team</TabsTrigger>
         </TabsList>
 
-        <TabsContent value={activeTab} className="mt-6">
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProjects.map((project, index) => (
-              <Card
-                key={project.id}
-                className={`group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 animate-scale-in`}
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
-                <div className="relative overflow-hidden rounded-t-lg">
-                  <img
-                    src={project.image || "/placeholder.svg"}
-                    alt={project.title}
-                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <div className="absolute top-3 left-3">
-                    <Badge variant={project.type === "team" ? "default" : "secondary"}>
-                      {project.type === "team" ? "Team" : "Individual"}
-                    </Badge>
-                  </div>
-                  <div className="absolute top-3 right-3">
-                    <Badge
-                      variant={
-                        project.status === "Completed"
-                          ? "default"
-                          : project.status === "In Progress"
-                            ? "secondary"
-                            : "outline"
-                      }
-                    >
-                      {project.status}
-                    </Badge>
-                  </div>
-                  <div className="absolute top-0 right-0 p-2">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 bg-background/80 backdrop-blur-sm">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem>
-                          <Eye className="mr-2 h-4 w-4" />
-                          View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit Project
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </div>
+        <TabsContent value="all" className="mt-6">
+          <ProjectGrid 
+            projects={getAllProjects()} 
+            onView={handleViewProject}
+            onEdit={handleEditProject}
+            onDelete={handleDeleteProject}
+            onOpenUrl={handleOpenUrl}
+            onAddProject={handleAddProject}
+            deleteLoading={deleteLoading}
+          />
+        </TabsContent>
 
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">{project.title}</CardTitle>
-                  <CardDescription className="text-sm line-clamp-2">{project.description}</CardDescription>
-                </CardHeader>
+        <TabsContent value="individual" className="mt-6">
+          <ProjectGrid 
+            projects={getIndividualProjects()} 
+            onView={handleViewProject}
+            onEdit={handleEditProject}
+            onDelete={handleDeleteProject}
+            onOpenUrl={handleOpenUrl}
+            onAddProject={handleAddProject}
+            deleteLoading={deleteLoading}
+          />
+        </TabsContent>
 
-                <CardContent className="space-y-4">
-                  <div className="flex flex-wrap gap-1">
-                    {project.technologies.slice(0, 3).map((tech) => (
-                      <Badge key={tech} variant="outline" className="text-xs">
-                        {tech}
-                      </Badge>
-                    ))}
-                    {project.technologies.length > 3 && (
-                      <Badge variant="outline" className="text-xs">
-                        +{project.technologies.length - 3}
-                      </Badge>
-                    )}
-                  </div>
-
-                  {project.collaborators && (
-                    <div className="text-sm text-muted-foreground">
-                      <strong>Collaborators:</strong> {project.collaborators.join(", ")}
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <div className="flex items-center space-x-4">
-                      <span>{project.views} views</span>
-                      <span>{project.likes} likes</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <Calendar className="w-3 h-3" />
-                      <span>{new Date(project.updatedAt).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" className="flex-1 bg-transparent">
-                      <ExternalLink className="w-3 h-3 mr-1" />
-                      Demo
-                    </Button>
-                    <Button size="sm" variant="outline" className="flex-1 bg-transparent">
-                      <Github className="w-3 h-3 mr-1" />
-                      Code
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {filteredProjects.length === 0 && (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                <FolderOpen className="w-8 h-8 text-muted-foreground" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">No projects found</h3>
-              <p className="text-muted-foreground mb-4">
-                {searchQuery ? "Try adjusting your search terms" : "Get started by creating your first project"}
-              </p>
-              <Button asChild>
-                <Link href="/dashboard/projects/new">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Project
-                </Link>
-              </Button>
-            </div>
-          )}
+        <TabsContent value="team" className="mt-6">
+          <ProjectGrid 
+            projects={getTeamProjects()} 
+            onView={handleViewProject}
+            onEdit={handleEditProject}
+            onDelete={handleDeleteProject}
+            onOpenUrl={handleOpenUrl}
+            onAddProject={handleAddProject}
+            deleteLoading={deleteLoading}
+          />
         </TabsContent>
       </Tabs>
     </div>
+  )
+}
+
+interface ProjectGridProps {
+  projects: any[]
+  onView: (id: string) => void
+  onEdit: (id: string) => void
+  onDelete: (id: string) => void
+  onOpenUrl: (url: string) => void
+  onAddProject: () => void
+  deleteLoading: string | null
+}
+
+function ProjectGrid({ 
+  projects, 
+  onView, 
+  onEdit, 
+  onDelete, 
+  onOpenUrl, 
+  onAddProject, 
+  deleteLoading 
+}: ProjectGridProps) {
+  const [showDeleteDialog, setShowDeleteDialog] = useState<string | null>(null)
+
+  if (projects.length === 0) {
+    return (
+      <div className="text-center py-12" style={{ position: 'relative', zIndex: 9999, pointerEvents: 'all' }}>
+        <FolderOpen className="mx-auto h-12 w-12 text-muted-foreground" />
+        <h3 className="mt-2 text-sm font-semibold text-muted-foreground">No projects</h3>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Get started by creating a new project.
+        </p>
+        <div className="mt-6" style={{ position: 'relative', zIndex: 9999 }}>
+          <button 
+            onClick={onAddProject}
+            style={{ position: 'relative', zIndex: 9999, pointerEvents: 'all' }}
+            className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 cursor-pointer"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Project
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {projects.map((project, index) => (
+          <Card
+            key={project._id}
+            className="group hover:shadow-xl dark:hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 animate-scale-in border border-border bg-card rounded-lg overflow-hidden"
+            style={{ animationDelay: `${index * 0.1}s` }}
+          >
+            <div className="relative overflow-hidden rounded-t-lg">
+              <img
+                src={project.image || "/placeholder.jpg"}
+                alt={project.title}
+                className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+              <div className="absolute top-3 left-3 z-10">
+                <Badge variant={project.type === "team" ? "default" : "secondary"}>
+                  {project.type === "team" ? "Team" : "Individual"}
+                </Badge>
+              </div>
+              <div className="absolute bottom-3 right-3 z-10">
+                <Badge
+                  variant={
+                    project.status === "completed"
+                      ? "default"
+                      : project.status === "in-progress"
+                        ? "secondary"
+                        : "outline"
+                  }
+                  className="bg-background/90 text-foreground shadow-sm border"
+                >
+                  {project.status.charAt(0).toUpperCase() + project.status.slice(1).replace('-', ' ')}
+                </Badge>
+              </div>
+              
+              {/* Action buttons overlay */}
+              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex space-x-1">
+                  <button
+                    onClick={() => onView(project._id)}
+                    style={{ zIndex: 1000 }}
+                    className="p-2 bg-background/90 border border-border text-foreground rounded-full hover:bg-accent hover:text-accent-foreground transition-colors shadow-lg"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => onEdit(project._id)}
+                    style={{ zIndex: 1000 }}
+                    className="p-2 bg-blue-500/90 text-white rounded-full hover:bg-blue-600 transition-colors shadow-lg"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => setShowDeleteDialog(project._id)}
+                    style={{ zIndex: 1000 }}
+                    className="p-2 bg-red-500/90 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-semibold line-clamp-1 mb-1">
+                {project.title}
+              </CardTitle>
+              <CardDescription className="line-clamp-2 text-sm text-muted-foreground">
+                {project.description}
+              </CardDescription>
+            </CardHeader>
+
+            <CardContent className="space-y-3 pt-0">
+              <div className="flex flex-wrap gap-1">
+                {project.technologies?.slice(0, 3).map((tech: string, index: number) => (
+                  <Badge key={index} variant="outline" className="text-xs py-1 px-2">
+                    {tech}
+                  </Badge>
+                ))}
+                {project.technologies?.length > 3 && (
+                  <Badge variant="outline" className="text-xs py-1 px-2">
+                    +{project.technologies.length - 3}
+                  </Badge>
+                )}
+              </div>
+
+              {project.collaborators && project.collaborators.length > 0 && (
+                <div className="text-sm text-muted-foreground">
+                  <strong className="text-foreground">Collaborators:</strong> {project.collaborators.join(", ")}
+                </div>
+              )}
+
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <div className="flex items-center space-x-4">
+                  <span>{project.views || 0} views</span>
+                  <span>{project.likes || 0} likes</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <Calendar className="w-3 h-3" />
+                  <span>{new Date(project.updatedAt || project.createdAt).toLocaleDateString()}</span>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                {project.liveUrl && (
+                  <button 
+                    onClick={() => onOpenUrl(project.liveUrl)}
+                    style={{ zIndex: 1000 }}
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white h-9 px-3 flex-1 cursor-pointer shadow-sm"
+                  >
+                    <ExternalLink className="w-3 h-3 mr-1" />
+                    Demo
+                  </button>
+                )}
+                {project.githubUrl && (
+                  <button 
+                    onClick={() => onOpenUrl(project.githubUrl)}
+                    style={{ zIndex: 1000 }}
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-gray-800 hover:bg-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 text-white h-9 px-3 flex-1 cursor-pointer shadow-sm"
+                  >
+                    <Github className="w-3 h-3 mr-1" />
+                    Code
+                  </button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Simple Delete Confirmation Dialog */}
+      {showDeleteDialog && (
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center">
+          <div className="bg-card p-6 rounded-lg border shadow-lg max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">Delete Project</h3>
+            <p className="text-muted-foreground mb-6">
+              Are you sure you want to delete this project? This action cannot be undone.
+            </p>
+            <div className="flex space-x-2 justify-end">
+              <button
+                onClick={() => setShowDeleteDialog(null)}
+                className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-transparent hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  onDelete(showDeleteDialog)
+                  setShowDeleteDialog(null)
+                }}
+                disabled={deleteLoading === showDeleteDialog}
+                className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-destructive text-destructive-foreground hover:bg-destructive/90 h-10 px-4 py-2 cursor-pointer"
+              >
+                {deleteLoading === showDeleteDialog ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }

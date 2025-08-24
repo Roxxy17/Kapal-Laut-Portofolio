@@ -8,8 +8,20 @@
     "lint": "next lint",
     "start": "next start",
     "seed": "tsx scripts/seed.ts",
+    "update-team-projects": "tsx scripts/update-team-projects.ts",
+    "update-projects-completed": "tsx scripts/update-projects-completed.ts",
+    "add-user": "tsx scripts/add-user.ts",
+    "add-projects": "tsx scripts/add-projects.ts",
+    "production-setup": "tsx scripts/production-setup.ts",
     "test-env": "tsx scripts/test-env.ts",
-    "check-db": "tsx scripts/check-db.ts"
+    "check-db": "tsx scripts/check-db.ts",
+    "debug-mongodb": "tsx scripts/debug-mongodb.ts",
+    "monitor-mongodb": "tsx scripts/monitor-mongodb.ts",
+    "test-auth-flow": "tsx scripts/test-auth-flow.ts",
+    "clear-auth": "node scripts/clear-auth.js",
+    "debug-passwords": "tsx scripts/debug-passwords.ts",
+    "debug-user": "tsx scripts/debug-user.ts",
+    "setup-mongodb-atlas": "tsx scripts/setup-mongodb-atlas.ts"
   },
   "dependencies": {
     "@emotion/is-prop-valid": "latest",

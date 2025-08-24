@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
     try {
       body = await request.json()
     } catch (parseError) {
+      console.error('JSON parse error:', parseError)
       return NextResponse.json(
         { error: 'Invalid JSON format. Please provide valid JSON with email and password.' },
         { status: 400 }
@@ -37,9 +38,11 @@ export async function POST(request: NextRequest) {
     }
 
     const { email, password } = body
+    console.log('[LOGIN] Attempt for email:', email)
 
     // Validation
     if (!email || !password) {
+      console.log('[LOGIN] Missing email or password')
       return NextResponse.json(
         { error: 'Please provide email and password' },
         { status: 400 }
@@ -48,21 +51,37 @@ export async function POST(request: NextRequest) {
 
     // Find user
     const user = await User.findOne({ email })
+    console.log('[LOGIN] User found:', !!user)
+    
     if (!user) {
+      console.log('[LOGIN] User not found for email:', email)
       return NextResponse.json(
-        { error: 'Invalid credentials' },
+        { error: 'Invalid email or password. Try with the updated credentials from seed output' },
         { status: 401 }
       )
     }
 
     // Check password
+    console.log('[LOGIN] Checking password...')
     const isPasswordValid = await bcrypt.compare(password, user.password)
+    console.log('[LOGIN] Password valid:', isPasswordValid)
+    
     if (!isPasswordValid) {
+      console.log('[LOGIN] Invalid password for user:', email)
       return NextResponse.json(
-        { error: 'Invalid credentials' },
+        { error: 'Invalid email or password. Try with the updated credentials from seed output' },
         { status: 401 }
       )
     }
+    if (!isPasswordValid) {
+      console.log('[LOGIN] Invalid password for user:', email)
+      return NextResponse.json(
+        { error: 'Invalid email or password. Try with the updated credentials from seed output' },
+        { status: 401 }
+      )
+    }
+
+    console.log('[LOGIN] Authentication successful for:', email)
 
     // Generate JWT token
     const token = jwt.sign(
@@ -84,11 +103,25 @@ export async function POST(request: NextRequest) {
       createdAt: user.createdAt
     }
 
-    return NextResponse.json({
+    console.log('[LOGIN] Login successful, returning user data')
+    
+    // Create response with cookie
+    const response = NextResponse.json({
       message: 'Login successful',
       user: userResponse,
       token
     }, { status: 200 })
+
+    // Set auth cookie
+    response.cookies.set('auth-token', token, {
+      httpOnly: false, // Allow client-side access
+      secure: false, // Use false for localhost development
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
+      path: '/'
+    })
+
+    return response
 
   } catch (error: any) {
     console.error('Login error:', error)

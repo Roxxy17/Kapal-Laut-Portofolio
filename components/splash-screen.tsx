@@ -27,7 +27,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
 
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-iridescent"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700 dark:from-slate-900 dark:via-purple-900 dark:to-slate-900"
       initial={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.8 }}
@@ -40,9 +40,9 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
           transition={{ duration: 1, ease: "easeOut" }}
         >
           <div className="w-32 h-32 mx-auto relative">
-            <div className="absolute inset-0 rounded-full bg-white/20 backdrop-blur-xl border border-white/30"></div>
-            <div className="absolute inset-4 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-r from-white/40 to-white/20 animate-pulse"></div>
+            <div className="absolute inset-0 rounded-full bg-white/20 dark:bg-white/20 backdrop-blur-xl border border-white/30 dark:border-white/30"></div>
+            <div className="absolute inset-4 rounded-full bg-white/10 dark:bg-white/10 backdrop-blur-xl border border-white/20 dark:border-white/20 flex items-center justify-center">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-r from-white/40 to-white/20 dark:from-white/40 dark:to-white/20 animate-pulse"></div>
             </div>
           </div>
         </motion.div>
@@ -53,8 +53,8 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.5, duration: 0.8 }}
         >
-          <h1 className="text-4xl font-bold text-white font-serif">Team Portfolio</h1>
-          <p className="text-white/80 text-lg">Creative Digital Solutions</p>
+          <h1 className="text-4xl font-bold text-white dark:text-white font-serif">Team Portfolio</h1>
+          <p className="text-white/90 dark:text-white/80 text-lg">Creative Digital Solutions</p>
         </motion.div>
 
         <motion.div
@@ -63,14 +63,14 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
           animate={{ width: 256, opacity: 1 }}
           transition={{ delay: 1, duration: 0.8 }}
         >
-          <div className="h-1 bg-white/20 rounded-full overflow-hidden">
+          <div className="h-1 bg-white/20 dark:bg-white/20 rounded-full overflow-hidden">
             <motion.div
-              className="h-full bg-gradient-to-r from-white/60 to-white/40 rounded-full"
+              className="h-full bg-gradient-to-r from-white/70 to-white/50 dark:from-white/60 dark:to-white/40 rounded-full"
               style={{ width: `${progress}%` }}
               transition={{ duration: 0.1 }}
             />
           </div>
-          <p className="text-white/60 text-sm mt-2">{progress}%</p>
+          <p className="text-white/80 dark:text-white/60 text-sm mt-2">{progress}%</p>
         </motion.div>
       </div>
     </motion.div>

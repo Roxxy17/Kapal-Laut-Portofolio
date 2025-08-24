@@ -2,8 +2,8 @@
 
 import type React from "react"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -18,8 +18,30 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
+  const [demoUsers, setDemoUsers] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const { login, isLoading } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  // Fetch team members from database
+  useEffect(() => {
+    const fetchTeamMembers = async () => {
+      try {
+        const response = await fetch('/api/users')
+        if (response.ok) {
+          const data = await response.json()
+          setDemoUsers(data.users || [])
+        }
+      } catch (error) {
+        console.error('Failed to fetch team members:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchTeamMembers()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -27,17 +49,30 @@ export default function LoginPage() {
 
     const success = await login(email, password)
     if (success) {
-      router.push("/dashboard")
+      // Check for redirect parameter
+      const redirectTo = searchParams.get('redirect') || '/dashboard'
+      router.push(redirectTo)
     } else {
-      setError("Invalid email or password. Try demo accounts or admin@teamportfolio.com with admin123")
+      setError("Invalid email or password. Try with the updated credentials from seed output")
     }
   }
 
-  const demoAccounts = [
-    { name: "Alex Rodriguez", email: "alex@teamportfolio.com", role: "Lead Developer", icon: Code },
-    { name: "Sarah Chen", email: "sarah@teamportfolio.com", role: "UI/UX Designer", icon: Palette },
-    { name: "Mike Johnson", email: "mike@teamportfolio.com", role: "Project Manager", icon: Rocket },
-  ]
+  const getRoleDisplay = (user: any) => {
+    // Map user names to roles
+    const roleMap: { [key: string]: string } = {
+      'Kalila Atha Achmad': 'Full Stack & Mobile Dev',
+      'Rifqi Dani Putranto': 'Full Stack & Mobile Dev', 
+      'Nada Satya Maharani': 'Frontend & UI/UX Designer'
+    }
+    return roleMap[user.name] || user.role || 'Team Member'
+  }
+
+  const getRoleIcon = (user: any) => {
+    const roleName = getRoleDisplay(user)
+    if (roleName.includes('Designer')) return Palette
+    if (roleName.includes('Dev')) return Code
+    return Rocket
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-accent/5 p-4 relative overflow-hidden">
@@ -131,32 +166,37 @@ export default function LoginPage() {
             </form>
 
             <div className="mt-6 space-y-3">
-              <p className="text-sm font-medium text-muted-foreground">Demo Team Members:</p>
+              <p className="text-sm font-medium text-muted-foreground">Our Team Members:</p>
               <div className="space-y-2">
-                {demoAccounts.map((account, index) => (
-                  <div
-                    key={account.email}
-                    className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors cursor-pointer group"
-                    onClick={() => {
-                      setEmail(account.email)
-                      setPassword("password")
-                    }}
-                  >
-                    <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                      <account.icon className="w-4 h-4 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{account.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{account.role}</p>
-                    </div>
-                    <div className="text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
-                      Click to use
-                    </div>
+                {loading ? (
+                  <div className="flex items-center justify-center p-4">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span className="ml-2 text-sm text-muted-foreground">Loading team members...</span>
                   </div>
-                ))}
+                ) : (
+                  demoUsers.map((user: any, index: number) => {
+                    const IconComponent = getRoleIcon(user)
+                    const roleDisplay = getRoleDisplay(user)
+                    
+                    return (
+                      <div
+                        key={user.email || index}
+                        className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg border border-muted"
+                      >
+                        <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                          <IconComponent className="w-4 h-4 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{user.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{roleDisplay}</p>
+                        </div>
+                      </div>
+                    )
+                  })
+                )}
               </div>
               <p className="text-xs text-muted-foreground text-center">
-                Password for all accounts: <code className="bg-muted px-1 rounded">password</code>
+                Meet our talented team members
               </p>
             </div>
           </CardContent>

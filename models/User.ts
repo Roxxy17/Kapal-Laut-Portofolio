@@ -57,6 +57,7 @@ const UserSchema: Schema = new Schema({
   avatar: {
     type: String,
     default: '/placeholder-user.jpg'
+    // No maxlength for base64 images - can be quite large
   },
   skills: [{
     type: String,

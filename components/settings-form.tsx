@@ -200,38 +200,86 @@ export function SettingsForm() {
     const file = event.target.files?.[0]
     if (!file) return
 
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Error",
+        description: "Please select a valid image file",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Validate file size (max 2MB untuk production)
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: "Error",
+        description: "File size must be less than 2MB for optimal performance",
+        variant: "destructive",
+      })
+      return
+    }
+
     setIsUploading(true)
     try {
-      const formDataUpload = new FormData()
-      formDataUpload.append('avatar', file)
+      // Convert file to base64
+      const reader = new FileReader()
+      reader.onloadend = async () => {
+        const base64String = reader.result as string
+        
+        try {
+          const token = localStorage.getItem('token')
+          const response = await fetch('/api/profile/avatar', {
+            method: 'PUT',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              avatar: base64String,
+              filename: file.name,
+              fileType: file.type
+            })
+          })
 
-      const token = localStorage.getItem('token')
-      const response = await fetch('/api/upload/avatar', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formDataUpload
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        setFormData(prev => ({ ...prev, avatar: data.avatarUrl }))
-        toast({
-          title: "Success",
-          description: "Avatar uploaded successfully",
-        })
-      } else {
-        const error = await response.json()
-        throw new Error(error.error || 'Upload failed')
+          if (response.ok) {
+            const data = await response.json()
+            setFormData(prev => ({ ...prev, avatar: data.avatar }))
+            toast({
+              title: "Success",
+              description: "Avatar uploaded successfully",
+            })
+          } else {
+            const error = await response.json()
+            throw new Error(error.error || 'Upload failed')
+          }
+        } catch (error: any) {
+          toast({
+            title: "Error",
+            description: error.message || "Failed to upload avatar",
+            variant: "destructive",
+          })
+        } finally {
+          setIsUploading(false)
+        }
       }
+      
+      reader.onerror = () => {
+        toast({
+          title: "Error",
+          description: "Failed to read file",
+          variant: "destructive",
+        })
+        setIsUploading(false)
+      }
+      
+      reader.readAsDataURL(file)
     } catch (error: any) {
       toast({
         title: "Error",
         description: error.message || "Failed to upload avatar",
         variant: "destructive",
       })
-    } finally {
       setIsUploading(false)
     }
   }

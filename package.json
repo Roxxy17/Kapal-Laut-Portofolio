@@ -9,7 +9,9 @@
     "start": "next start",
     "seed": "tsx scripts/seed.ts",
     "production-setup": "tsx scripts/production-setup.ts",
-    "check-db": "tsx scripts/check-db.ts"
+    "check-db": "tsx scripts/check-db.ts",
+    "build:prod": "NODE_ENV=production next build",
+    "analyze": "ANALYZE=true next build"
   },
   "dependencies": {
     "@emotion/is-prop-valid": "latest",

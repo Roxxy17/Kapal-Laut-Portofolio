@@ -81,8 +81,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('[LOGIN] Authentication successful for:', email)
-
     // Generate JWT token
     const token = jwt.sign(
       { 

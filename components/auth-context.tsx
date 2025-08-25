@@ -31,18 +31,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const storedUser = localStorage.getItem('user')
         const token = localStorage.getItem('token')
         
-        console.log('[AUTH] Checking stored auth:', {
-          hasStoredUser: !!storedUser,
-          hasToken: !!token
-        })
-        
         // Also check cookie as fallback
         const cookieToken = document.cookie
           .split('; ')
           .find(row => row.startsWith('auth-token='))
           ?.split('=')[1]
-        
-        console.log('[AUTH] Cookie token exists:', !!cookieToken)
         
         if (storedUser && (token || cookieToken)) {
           // Use the token from localStorage first, then fallback to cookie
@@ -65,27 +58,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             
             if (response.ok) {
               const validationData = await response.json()
-              console.log('[AUTH] Token valid, setting user:', validationData.user)
               setUser(validationData.user)
               
               // Update localStorage with fresh data from server
               localStorage.setItem('user', JSON.stringify(validationData.user))
             } else {
-              console.log('[AUTH] Token invalid, clearing auth')
               // Clear invalid auth
               localStorage.removeItem('user')
               localStorage.removeItem('token')
               document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
             }
           } catch (error) {
-            console.log('[AUTH] Token validation failed:', error)
             // Clear invalid auth
             localStorage.removeItem('user')
             localStorage.removeItem('token')
             document.cookie = 'auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
           }
         } else {
-          console.log('[AUTH] No valid stored auth found')
+          // No valid stored auth found
         }
       }
       setIsLoading(false)
@@ -109,19 +99,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await response.json()
 
       if (response.ok) {
-        console.log('[AUTH] Login successful:', data)
-        
         // Store user and token in localStorage only
         if (typeof window !== 'undefined') {
           localStorage.setItem('user', JSON.stringify(data.user))
           localStorage.setItem('token', data.token)
-          
-          console.log('[AUTH] Stored user and token in localStorage')
         }
         
         // Set user state
         setUser(data.user)
-        console.log('[AUTH] User state updated:', data.user)
         return true
       } else {
         console.error('Login failed:', data.error)

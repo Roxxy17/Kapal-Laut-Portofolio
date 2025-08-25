@@ -7,7 +7,6 @@ import { AuthProvider } from "@/components/auth-context"
 import { SplashScreenProvider } from "@/components/splash-screen-provider"
 import { PageTransition } from "@/components/page-transition"
 import { AnimatedBackground } from "@/components/animated-background"
-import { AuthDebugger } from "@/components/auth-debugger"
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -53,7 +52,6 @@ export default function RootLayout({
             <SplashScreenProvider>
               <PageTransition>
                 <div className="min-h-screen">{children}</div>
-                <AuthDebugger />
               </PageTransition>
             </SplashScreenProvider>
           </AuthProvider>

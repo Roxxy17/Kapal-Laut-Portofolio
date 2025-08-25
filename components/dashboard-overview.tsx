@@ -97,7 +97,6 @@ export function DashboardOverview() {
           return
         }
 
-        console.log('[DASHBOARD] Making API call to /api/dashboard/stats')
         const response = await fetch('/api/dashboard/stats', {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -105,14 +104,11 @@ export function DashboardOverview() {
           }
         })
         
-        console.log('[DASHBOARD] API response status:', response.status)
-        
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`)
         }
         
         const data = await response.json()
-        console.log('[DASHBOARD] API response data:', data)
         
         if (data.success) {
           const { stats } = data
@@ -135,7 +131,6 @@ export function DashboardOverview() {
             projectsByStatus: stats.projectsByStatus || {}
           })
           setConnectionStatus('connected')
-          console.log('[DASHBOARD] Dashboard data loaded successfully')
         } else {
           throw new Error(data.error || 'Failed to fetch dashboard data')
         }

@@ -24,7 +24,7 @@ export function ContactSection() {
             </span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            Ready to start your next project? Let's collaborate and create something amazing together that exceeds your expectations.
+            Ready to start your next project? Contact Kapal Laut Team and let's collaborate to create something amazing together.
           </p>
         </div>
 

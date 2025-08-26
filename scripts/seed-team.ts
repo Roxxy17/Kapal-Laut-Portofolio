@@ -41,7 +41,7 @@ async function seedData() {
         social: {
           github: 'https://github.com/kalilaatha',
           linkedin: 'https://linkedin.com/in/kalilaatha',
-          twitter: '#'
+          instagram: '#'
         }
       },
       {
@@ -57,7 +57,7 @@ async function seedData() {
         social: {
           github: 'https://github.com/rifqidani',
           linkedin: 'https://linkedin.com/in/rifqidani',
-          twitter: '#'
+          instagram: '#'
         }
       },
       {
@@ -73,7 +73,7 @@ async function seedData() {
         social: {
           github: 'https://github.com/nadacina',
           linkedin: 'https://linkedin.com/in/nadacina',
-          twitter: '#'
+          instagram: '#'
         }
       },
       {
@@ -89,7 +89,7 @@ async function seedData() {
         social: {
           github: 'https://github.com/kapal-laut-team',
           linkedin: 'https://linkedin.com/company/kapal-laut',
-          twitter: 'https://twitter.com/kapallautteam'
+          instagram: 'https://instagram.com/kapallautteam'
         }
       }
     ])

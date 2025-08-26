@@ -14,7 +14,7 @@ export interface IUser extends Document {
   social?: {
     github?: string
     linkedin?: string
-    twitter?: string
+    instagram?: string
   }
   createdAt: Date
   updatedAt: Date
@@ -75,13 +75,13 @@ const UserSchema: Schema = new Schema({
   social: {
     github: {
       type: String,
-      trim: true
+      trim: true  
     },
     linkedin: {
       type: String,
       trim: true
     },
-    twitter: {
+    instagram: {
       type: String,
       trim: true
     }

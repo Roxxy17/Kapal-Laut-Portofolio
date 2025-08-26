@@ -53,7 +53,7 @@ export function SplashScreen({ onComplete }: SplashScreenProps) {
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.5, duration: 0.8 }}
         >
-          <h1 className="text-4xl font-bold text-white dark:text-white font-serif">Team Portfolio</h1>
+          <h1 className="text-4xl font-bold text-white dark:text-white font-serif">Kapal Laut Team Portfolio</h1>
           <p className="text-white/90 dark:text-white/80 text-lg">Creative Digital Solutions</p>
         </motion.div>
 

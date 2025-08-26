@@ -52,7 +52,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                   <span className="text-primary-foreground font-bold text-lg">T</span>
                 </div>
-                <span className="font-serif font-semibold text-lg">TeamPortfolio</span>
+                <span className="font-serif font-semibold text-lg">Kapal Laut Team</span>
               </Link>
               <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(false)}>
                 <X className="h-5 w-5" />
@@ -89,7 +89,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <span className="text-primary-foreground font-bold text-lg">T</span>
             </div>
-            <span className="font-serif font-semibold text-lg">TeamPortfolio</span>
+            <span className="font-serif font-semibold text-lg">Kapal Laut Team</span>
           </Link>
         </div>
         <nav className="p-4 space-y-2">

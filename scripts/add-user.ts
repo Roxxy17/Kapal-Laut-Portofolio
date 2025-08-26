@@ -1,4 +1,6 @@
 // Script untuk menambahkan user baru TANPA menghapus data existing
+// Cara menjalankan: npx ts-node scripts/add-user.ts
+// Atau: npm run ts-node scripts/add-user.ts
 import { config } from 'dotenv'
 import { resolve } from 'path'
 
@@ -14,6 +16,16 @@ interface NewUser {
   email: string
   password: string
   role?: 'admin' | 'user'
+  // Team profile fields (optional)
+  jobTitle?: string
+  avatar?: string
+  skills?: string[]
+  bio?: string
+  social?: {
+    github?: string
+    linkedin?: string
+    instagram?: string
+  }
 }
 
 async function addNewUser(userData: NewUser) {
@@ -36,7 +48,13 @@ async function addNewUser(userData: NewUser) {
       name: userData.name,
       email: userData.email,
       password: hashedPassword,
-      role: userData.role || 'user'
+      role: userData.role || 'user',
+      jobTitle: userData.jobTitle,
+      bio: userData.bio,
+      skills: userData.skills,
+      social: userData.social,
+      avatar: userData.avatar || '/placeholder-user.jpg',
+      projectsCompleted: 0
     })
 
     console.log('✅ User created successfully:')
@@ -57,10 +75,18 @@ async function addNewUser(userData: NewUser) {
 // Contoh penggunaan - uncomment dan edit sesuai kebutuhan:
 
 addNewUser({
-  name: 'John Doe',
-  email: 'john.doe@gmail.com',
-  password: 'johndoe2024',
-  role: 'user'
+  name: 'Ariefhan Maulana',
+  email: 'ariefhanmaulana@gmail.com',
+  password: 'ariefgantengbingit',
+  role: 'user',
+  jobTitle: 'Project Manager',
+  bio: 'Passionate frontend developer with expertise in React and Vue.js',
+  skills: ['React', 'Vue.js', 'JavaScript', 'TypeScript', 'CSS'],
+  social: {
+    github: 'https://github.com/ariefhanmaulana',
+    linkedin: 'https://linkedin.com/in/ariefhanmaulana',
+    instagram: 'https://instagram.com/ariefhanmaulana'
+  }
 })
 
 // Untuk menambah multiple users sekaligus:
@@ -71,13 +97,29 @@ async function addMultipleUsers() {
       name: 'Alice Smith',
       email: 'alice@gmail.com',
       password: 'alice123',
-      role: 'user' as const
+      role: 'user' as const,
+      jobTitle: 'UI/UX Designer',
+      bio: 'Creative designer with passion for user experience',
+      skills: ['Figma', 'Adobe XD', 'Photoshop', 'Illustrator'],
+      social: {
+        github: 'https://github.com/alicesmith',
+        linkedin: 'https://linkedin.com/in/alicesmith',
+        instagram: 'https://instagram.com/alicedesign'
+      }
     },
     {
       name: 'Bob Wilson',
       email: 'bob@gmail.com', 
       password: 'bob123',
-      role: 'user' as const
+      role: 'user' as const,
+      jobTitle: 'Backend Developer',
+      bio: 'Backend specialist with expertise in Node.js and databases',
+      skills: ['Node.js', 'MongoDB', 'Express', 'PostgreSQL'],
+      social: {
+        github: 'https://github.com/bobwilson',
+        linkedin: 'https://linkedin.com/in/bobwilson',
+        instagram: '#'
+      }
     }
   ]
 

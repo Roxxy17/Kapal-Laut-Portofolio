@@ -15,21 +15,29 @@ export async function GET() {
     }).lean()
 
     // Transform data untuk team section format
-    const transformedTeamMembers = teamMembers.map(member => ({
-      _id: member._id,
-      name: member.name,
-      email: member.email,
-      role: member.jobTitle || (member.role === 'admin' ? 'Project Manager & Full Stack Developer' : 'Team Member'),
-      avatar: member.avatar || '/placeholder-user.jpg',
-      skills: member.skills || ['JavaScript', 'React', 'Node.js'],
-      projects: member.projectsCompleted || 0,
-      bio: member.bio || 'Passionate developer creating amazing digital experiences.',
-      social: member.social || {
-        github: "#",
-        linkedin: "#", 
-        twitter: "#"
+    const transformedTeamMembers = teamMembers.map(member => {
+      // Handle migration from twitter to instagram
+      const social = member.social || {}
+      const finalSocial = {
+        github: social.github || "#",
+        linkedin: social.linkedin || "#", 
+        instagram: social.instagram || social.twitter || "#" // Fallback to twitter if instagram not set
       }
-    }))
+      
+      console.log(`Team member ${member.name} social:`, finalSocial) // Debug log
+      
+      return {
+        _id: member._id,
+        name: member.name,
+        email: member.email,
+        role: member.jobTitle || (member.role === 'admin' ? 'Project Manager & Full Stack Developer' : 'Team Member'),
+        avatar: member.avatar || '/placeholder-user.jpg',
+        skills: member.skills || ['JavaScript', 'React', 'Node.js'],
+        projects: member.projectsCompleted || 0,
+        bio: member.bio || 'Passionate developer creating amazing digital experiences.',
+        social: finalSocial
+      }
+    })
 
     return NextResponse.json({
       success: true,

@@ -112,13 +112,13 @@ export function ProjectsSection() {
       <div className="max-w-7xl mx-auto relative z-10">
         <div className="text-center mb-20 animate-fade-in-up">
           <h2 className="text-4xl md:text-5xl font-bold text-foreground leading-tight mb-6">
-            <span className="inline-block">Our</span>{" "}
+            <span className="inline-block">Kapal Laut Team</span>{" "}
             <span className="inline-block">
               Projects
             </span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed mb-8">
-            Explore our collaborative team projects and individual portfolio pieces that showcase our expertise and creativity
+            Explore Kapal Laut Team's collaborative projects and individual portfolio pieces that showcase our expertise and creativity
           </p>
           
           {/* Status Filter */}

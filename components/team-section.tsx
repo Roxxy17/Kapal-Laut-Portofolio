@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Github, Linkedin, Twitter } from "lucide-react"
+import { Github, Linkedin, Instagram } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect } from "react"
 
@@ -17,7 +17,7 @@ interface TeamMember {
   social: {
     github: string
     linkedin: string
-    twitter: string
+    instagram: string
   }
 }
 
@@ -65,7 +65,7 @@ export function TeamSection() {
             </span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            Talented individuals working together to create exceptional digital experiences with passion and expertise
+            Meet the talented individuals of Kapal Laut Team, working together to create exceptional digital experiences with passion and expertise
           </p>
         </div>
 
@@ -176,14 +176,41 @@ export function TeamSection() {
 
                       {/* Enhanced social links */}
                       <div className="flex justify-center space-x-3">
-                        <div className="w-10 h-10 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center hover:bg-accent hover:text-white transition-all duration-300 cursor-pointer group/social">
+                        <div 
+                          className="w-10 h-10 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center hover:bg-accent hover:text-white transition-all duration-300 cursor-pointer group/social"
+                          onClick={() => {
+                            const url = member.social?.github
+                            if (url && url !== '#') {
+                              window.open(url, '_blank')
+                            }
+                          }}
+                        >
                           <Github className="w-4 h-4 group-hover/social:scale-110 transition-transform duration-200" />
                         </div>
-                        <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center hover:bg-primary hover:text-white transition-all duration-300 cursor-pointer group/social">
+                        <div 
+                          className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center hover:bg-primary hover:text-white transition-all duration-300 cursor-pointer group/social"
+                          onClick={() => {
+                            const url = member.social?.linkedin
+                            if (url && url !== '#') {
+                              window.open(url, '_blank')
+                            }
+                          }}
+                        >
                           <Linkedin className="w-4 h-4 group-hover/social:scale-110 transition-transform duration-200" />
                         </div>
-                        <div className="w-10 h-10 rounded-full bg-chart-3/10 border border-chart-3/20 flex items-center justify-center hover:bg-chart-3 hover:text-white transition-all duration-300 cursor-pointer group/social">
-                          <Twitter className="w-4 h-4 group-hover/social:scale-110 transition-transform duration-200" />
+                        <div 
+                          className="w-10 h-10 rounded-full bg-chart-3/10 border border-chart-3/20 flex items-center justify-center hover:bg-chart-3 hover:text-white transition-all duration-300 cursor-pointer group/social"
+                          onClick={() => {
+                            const url = member.social?.instagram
+                            console.log('Instagram URL clicked:', url) // Debug log
+                            if (url && url !== '#') {
+                              window.open(url, '_blank')
+                            } else {
+                              console.log('Instagram URL is empty or placeholder')
+                            }
+                          }}
+                        >
+                          <Instagram className="w-4 h-4 group-hover/social:scale-110 transition-transform duration-200" />
                         </div>
                       </div>
                     </div>

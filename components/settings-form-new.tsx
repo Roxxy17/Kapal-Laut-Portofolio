@@ -93,15 +93,12 @@ export function SettingsForm() {
   }, [toast])
 
   // Handle form submission
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
     setIsSaving(true)
 
     try {
       const token = localStorage.getItem('token')
-      
-      // Debug: Log the data being sent
-      console.log('Sending profile data:', formData)
-      
       const response = await fetch('/api/profile', {
         method: 'PUT',
         headers: {
@@ -111,9 +108,6 @@ export function SettingsForm() {
         body: JSON.stringify(formData)
       })
 
-      const result = await response.json()
-      console.log('Profile update response:', result)
-
       if (response.ok) {
         setSuccess(true)
         toast({
@@ -121,12 +115,14 @@ export function SettingsForm() {
           description: "Profile updated successfully",
         })
         
+        // Reset success state after 3 seconds
         setTimeout(() => setSuccess(false), 3000)
       } else {
-        throw new Error(result.error || 'Update failed')
+        const error = await response.json()
+        throw new Error(error.error || 'Update failed')
       }
     } catch (error: any) {
-      console.error('Profile update error:', error)
+      console.error('Update error:', error)
       toast({
         title: "Error",
         description: error.message || "Failed to update profile",
@@ -162,7 +158,6 @@ export function SettingsForm() {
     setIsSaving(true)
     try {
       const token = localStorage.getItem('token')
-      
       const response = await fetch('/api/profile', {
         method: 'PUT',
         headers: {
@@ -206,86 +201,39 @@ export function SettingsForm() {
     const file = event.target.files?.[0]
     if (!file) return
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      toast({
-        title: "Error",
-        description: "Please select a valid image file",
-        variant: "destructive",
-      })
-      return
-    }
-
-    // Validate file size (max 2MB untuk production)
-    if (file.size > 2 * 1024 * 1024) {
-      toast({
-        title: "Error",
-        description: "File size must be less than 2MB for optimal performance",
-        variant: "destructive",
-      })
-      return
-    }
-
     setIsUploading(true)
     try {
-      // Convert file to base64
-      const reader = new FileReader()
-      reader.onloadend = async () => {
-        const base64String = reader.result as string
-        
-        try {
-          const token = localStorage.getItem('token')
-          const response = await fetch('/api/profile/avatar', {
-            method: 'PUT',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              avatar: base64String,
-              filename: file.name,
-              fileType: file.type
-            })
-          })
+      const formDataUpload = new FormData()
+      formDataUpload.append('avatar', file)
 
-          if (response.ok) {
-            const data = await response.json()
-            setFormData(prev => ({ ...prev, avatar: data.avatar }))
-            toast({
-              title: "Success",
-              description: "Avatar uploaded successfully",
-            })
-          } else {
-            const error = await response.json()
-            throw new Error(error.error || 'Upload failed')
-          }
-        } catch (error: any) {
-          toast({
-            title: "Error",
-            description: error.message || "Failed to upload avatar",
-            variant: "destructive",
-          })
-        } finally {
-          setIsUploading(false)
-        }
-      }
-      
-      reader.onerror = () => {
+      const token = localStorage.getItem('token')
+      const response = await fetch('/api/upload/avatar', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formDataUpload
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setFormData(prev => ({ ...prev, avatar: data.avatarUrl }))
         toast({
-          title: "Error",
-          description: "Failed to read file",
-          variant: "destructive",
+          title: "Success",
+          description: "Avatar uploaded successfully",
         })
-        setIsUploading(false)
+      } else {
+        const error = await response.json()
+        throw new Error(error.error || 'Upload failed')
       }
-      
-      reader.readAsDataURL(file)
     } catch (error: any) {
+      console.error('Upload error:', error)
       toast({
         title: "Error",
         description: error.message || "Failed to upload avatar",
         variant: "destructive",
       })
+    } finally {
       setIsUploading(false)
     }
   }
@@ -336,12 +284,6 @@ export function SettingsForm() {
           <p className="text-muted-foreground mb-8 text-lg">
             Your profile changes have been saved.
           </p>
-          <Button 
-            onClick={() => setSuccess(false)}
-            className="mt-4"
-          >
-            Continue Editing
-          </Button>
         </div>
       </div>
     )
@@ -359,7 +301,7 @@ export function SettingsForm() {
         </p>
       </div>
 
-      <div className="space-y-8">
+      <form onSubmit={handleSubmit} className="space-y-8">
         <div className="grid lg:grid-cols-2 gap-8">
           {/* Profile Information */}
           <Card className="animate-slide-in-left border-border/50 bg-card/50 backdrop-blur-sm hover:shadow-lg transition-all duration-300">
@@ -407,20 +349,21 @@ export function SettingsForm() {
 
               <div className="space-y-3">
                 <Label htmlFor="name" className="text-sm font-semibold">
-                  Full Name
+                  Full Name *
                 </Label>
                 <Input
                   id="name"
                   placeholder="Your full name"
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  required
                   className="h-12 border-border/50 focus:border-primary/50 bg-background/50"
                 />
               </div>
 
               <div className="space-y-3">
                 <Label htmlFor="email" className="text-sm font-semibold">
-                  Email Address
+                  Email Address *
                 </Label>
                 <Input
                   id="email"
@@ -428,6 +371,7 @@ export function SettingsForm() {
                   placeholder="your@email.com"
                   value={formData.email}
                   onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                  required
                   className="h-12 border-border/50 focus:border-primary/50 bg-background/50"
                 />
               </div>
@@ -649,39 +593,23 @@ export function SettingsForm() {
           </CardContent>
         </Card>
 
-        {/* Save Profile Changes */}
-        <Card className="animate-slide-in-up animation-delay-500 border-border/50 bg-card/50 backdrop-blur-sm">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-xl font-serif">Save Profile Changes</CardTitle>
-            <CardDescription>Save all your profile updates</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex space-x-2">
-              <Button
-                type="button"
-                onClick={handleSubmit}
-                className="bg-primary/90 hover:bg-primary"
-              >
-                {isSaving ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <Save className="h-4 w-4 mr-2" />
-                )}
-                {isSaving ? 'Saving Changes...' : 'Save Profile Changes'}
-              </Button>
-              
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => window.location.reload()}
-                className="border-border/50 hover:bg-accent/50"
-              >
-                Reset Form
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+        {/* Submit Button */}
+        <div className="flex justify-end">
+          <Button
+            type="submit"
+            disabled={isSaving}
+            size="lg"
+            className="bg-primary/90 hover:bg-primary px-8"
+          >
+            {isSaving ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            ) : (
+              <Save className="h-4 w-4 mr-2" />
+            )}
+            {isSaving ? 'Saving Changes...' : 'Save Changes'}
+          </Button>
+        </div>
+      </form>
     </div>
   )
 }

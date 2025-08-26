@@ -89,6 +89,8 @@ export async function PUT(request: NextRequest) {
 
     // Parse request body
     const body = await request.json()
+    console.log('Profile update request body:', body)
+    
     const {
       name,
       email,
@@ -100,6 +102,8 @@ export async function PUT(request: NextRequest) {
       currentPassword,
       newPassword
     } = body
+
+    console.log('Extracted social data:', social)
 
     // Validate required fields
     if (!name || !email) {
@@ -129,12 +133,14 @@ export async function PUT(request: NextRequest) {
       skills: Array.isArray(skills) ? skills : user.skills,
       avatar: avatar || user.avatar,
       social: {
-        github: social?.github || user.social?.github || '',
-        linkedin: social?.linkedin || user.social?.linkedin || '',
-        twitter: social?.twitter || user.social?.twitter || ''
+        ...user.social,
+        ...social
       },
       updatedAt: new Date()
     }
+
+    console.log('Update data prepared:', updateData)
+    console.log('User social before update:', user.social)
 
     // Handle password change
     if (newPassword) {
@@ -165,6 +171,8 @@ export async function PUT(request: NextRequest) {
       updateData,
       { new: true, runValidators: true }
     ).select('-password')
+
+    console.log('User updated successfully:', updatedUser.social)
 
     return NextResponse.json({
       success: true,

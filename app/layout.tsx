@@ -16,8 +16,8 @@ const dmSans = DM_Sans({
 })
 
 export const metadata: Metadata = {
-  title: "Team Portfolio - Premium Digital Solutions",
-  description: "Showcase of our elite team's innovative projects and sophisticated portfolios",
+  title: "Kapal Laut Team - Digital Solutions Portfolio",
+  description: "Kapal Laut Team portfolio showcasing innovative projects, modern web development, and creative digital solutions",
   generator: "v0.app",
 }
 

@@ -61,7 +61,7 @@ export function ServicesSection() {
             </span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            We offer comprehensive digital solutions to bring your ideas to life with cutting-edge technology and
+            Kapal Laut Team provides comprehensive digital solutions, bringing your ideas to life with cutting-edge technology and
             creative excellence.
           </p>
         </div>

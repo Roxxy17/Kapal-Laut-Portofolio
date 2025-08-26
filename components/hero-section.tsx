@@ -51,11 +51,11 @@ export function HeroSection() {
   ]
 
   const typewriterTexts = [
-    "Digital Excellence",
-    "Amazing Websites",
-    "Mobile Apps",
-    "Creative Solutions",
-    "Modern Designs"
+    "Digital Solutions",
+    "Innovative Websites",
+    "Mobile Applications",
+    "Creative Designs",
+    "Modern Technologies"
   ]
 
   useEffect(() => {
@@ -137,7 +137,7 @@ export function HeroSection() {
             <div className="space-y-6">
               <div className="inline-flex items-center px-6 py-3 bg-accent/10 text-accent rounded-full text-sm font-medium animate-gentle-scale animation-delay-300 hover-magnetic cursor-pointer border border-accent/20">
                 <Sparkles className="w-4 h-4 mr-2 animate-subtle-rotate" />
-                Premium Digital Solutions
+                Kapal Laut Team Portfolio
               </div>
 
               <h1 className="text-5xl md:text-7xl font-bold text-foreground leading-tight">
@@ -155,8 +155,8 @@ export function HeroSection() {
               </h1>
 
               <p className="text-xl text-muted-foreground leading-relaxed max-w-2xl animate-text-reveal animation-delay-500">
-                An elite team of designers and developers crafting sophisticated digital experiences. Collaborate on
-                groundbreaking projects and elevate your creative potential.
+                Meet Kapal Laut Team - a skilled group of developers and designers creating exceptional digital experiences. 
+                Explore our collaborative projects and innovative solutions.
               </p>
             </div>
 
